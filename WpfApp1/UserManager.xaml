@@ -1,0 +1,33 @@
+﻿<Window
+    x:Class="WpfApp1.UserManager"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:WpfApp1"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="UserManager"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+
+    <Window.DataContext>
+        <local:MainWindowViewModel />
+    </Window.DataContext>
+    <Grid>
+        <ListView ItemsSource="{Binding AllUser}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn DisplayMemberBinding="{Binding ID}" Header="卡号" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Name}" Header="姓名" />
+                    <GridViewColumn Width="Auto">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Click="DeleteButton_Click" Content="删除" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</Window>
