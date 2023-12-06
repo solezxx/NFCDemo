@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfApp1
+namespace NFCDemo
 {
     public class CSVFile
     {

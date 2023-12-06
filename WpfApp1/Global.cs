@@ -7,7 +7,7 @@ using System.IO;
 using System.Configuration;
 using System.Windows;
 
-namespace WpfApp1
+namespace NFCDemo
 {
     public static class Global
     {
@@ -42,7 +42,7 @@ namespace WpfApp1
 
         #region 读卡器参数
 
-        static string _nfcCom = "COM3";
+        static string _nfcCom = "COM2";
         public static string NFCCom
         {
             get { return _nfcCom; }
@@ -88,7 +88,7 @@ namespace WpfApp1
                 mModbusRTU_COM = DXH.Ini.DXHIni.ContentReader("PLC参数", "串口号", mModbusRTU_COM, GlobalFile);
                 plcbaudRate = DXH.Ini.DXHIni.ContentReader("PLC参数", "波特率", plcbaudRate, GlobalFile);
 
-                _nfcCom = DXH.Ini.DXHIni.ContentReader("读卡器参数", "扫码枪串口", _nfcCom, GlobalFile);
+                _nfcCom = DXH.Ini.DXHIni.ContentReader("读卡器参数", "串口号", _nfcCom, GlobalFile);
                 baudRate = DXH.Ini.DXHIni.ContentReader("读卡器参数", "波特率", baudRate, GlobalFile);
 
                 machineid = DXH.Ini.DXHIni.ContentReader("其他", "机台编号", machineid, GlobalFile);

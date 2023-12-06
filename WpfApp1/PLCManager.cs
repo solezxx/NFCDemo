@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DXH.Modbus;
 
-namespace WpfApp1
+namespace NFCDemo
 {
     public static class PLCManager
     {

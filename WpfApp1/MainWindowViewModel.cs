@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DXH.ViewModel;
 
-namespace WpfApp1
+namespace NFCDemo
 {
     public class MainWindowViewModel : ViewModelBase
     {

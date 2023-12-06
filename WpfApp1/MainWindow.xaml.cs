@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 
 using System.Threading;
 
-namespace WpfApp1
+namespace NFCDemo
 {
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
@@ -62,11 +62,11 @@ namespace WpfApp1
                 int ret = reader.OpenComm(Convert.ToInt32(Global.NFCCom.Replace("COM", "")), int.Parse(Global.BaudRate));
                 if (0 == ret)
                 {
-                    LdrLog(" Open success!");
+                    LdrLog("NFC Open success!");
                 }
                 else
                 {
-                    LdrLog(" Open failed!");
+                    LdrLog("NFC Open failed!");
                 }
             }
         }
@@ -181,7 +181,6 @@ namespace WpfApp1
                                 }
                                 else
                                 {
-                                    LdrLog("未查询到人员信息，卡号：" + strTmp);
                                     var res = MessageBox.Show("未查询到人员信息，卡号：" + strTmp + "\r\n" + "是否录入人员", "提示！", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.None, MessageBoxOptions.DefaultDesktopOnly);
                                     if (res == MessageBoxResult.Yes)
                                     {
@@ -204,14 +203,11 @@ namespace WpfApp1
                                                 MainWindowViewModel.AllUser.Add(new User() { ID = strTmp, Name = name });
                                             });
                                             LdrLog($"添加人员{name},卡号{strTmp}");
+                                            LdrLog("如需保存产量，请录入后再次刷卡，否则无效");
                                         }
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            LdrLog("Comm isn't open!");
                         }
                         Thread.Sleep(100);
                     }

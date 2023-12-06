@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyTitle("WpfApp1")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("江苏力德尔")]
 [assembly: AssemblyProduct("WpfApp1")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
 [assembly: AssemblyTrademark("")]
