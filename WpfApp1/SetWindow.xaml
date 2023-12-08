@@ -1,0 +1,25 @@
+﻿<Window
+    x:Class="NFCDemo.SetWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:NFCDemo"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="SetWindow"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+    <Window.DataContext>
+        <local:MainWindowViewModel />
+    </Window.DataContext>
+    <Grid>
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="超时自动保存：" />
+                <TextBox Width="100" Text="{Binding TimeOut}" />
+                <TextBlock Text="秒"></TextBlock>
+            </StackPanel>
+            <Button Content="保存" Width="100" Height="40" Click="Save_Btn_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

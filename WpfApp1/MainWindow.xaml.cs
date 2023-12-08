@@ -30,9 +30,65 @@ namespace NFCDemo
             viewModel = DataContext as MainWindowViewModel;
             Global.Ini();
             PLCManager.Initialize();
-            PLCManager.XinjiePLC.ModbusStateChanged += Modbus_ConnectStateChanged;  
+            PLCManager.XinjiePLC.ModbusStateChanged += Modbus_ConnectStateChanged;
+            PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
             OpenCom();
             ReadA();
+        }
+
+        private void PLCManager_PLCStopChanged(object sender, EventArgs e)
+        {
+            if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "产量统计"))
+            {
+                Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "产量统计");
+            }
+            string path = AppDomain.CurrentDomain.BaseDirectory + $"产量统计\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+            if (!File.Exists(path))
+            {
+                CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+            }
+            //判断文件是否打开
+            if (IsFileInUse(path))
+            {
+                LdrLog("文件被占用，请关闭文件后再试");
+                MessageBox.Show("文件被占用，请关闭文件后再试");
+                return;
+            }
+            CSVFile.AddNewLine(path,
+                new[]
+                {
+                    DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                    LastUser.Name, Global.MachineID, PLCManager.Count.ToString()
+                });
+            LdrLog("保存csv成功，文件位置：" + path);
+            LastUser = null;
+            var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
+            newAllLines.RemoveAt(0);
+            var newAllYield = new List<Yield>();
+            foreach (var line in newAllLines)
+            {
+                var items = line.Split(',');
+                var name = items[2];
+                var count1 = int.Parse(items[4]);
+                var yield = newAllYield.FirstOrDefault(x => x.Name == name);
+                if (yield == null)
+                {
+                    newAllYield.Add(new Yield() { Name = name, Count = count1 });
+                }
+                else
+                {
+                    yield.Count += count1;
+                }
+            }
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                MainWindowViewModel.AllYield.Clear();
+                foreach (var yield in newAllYield)
+                {
+                    MainWindowViewModel.AllYield.Add(yield);
+                }
+            });
+            PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
         }
 
         private void Modbus_ConnectStateChanged(object sender, bool e)
@@ -144,8 +200,7 @@ namespace NFCDemo
                                     LdrLog("扫到人员：" + user.Name);
 
                                     MessageBox.Show("扫到人员：" + user.Name, "提示", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 100, new[] { 1 });
-                                    var a = PLCManager.XinjiePLC.ModbusRead(1, 3, 0, 1);
+
                                     if (LastUser == null)
                                     {
                                         LastUser = user;
@@ -153,7 +208,7 @@ namespace NFCDemo
                                     }
                                     else
                                     {
-                                        if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory+"产量统计"))
+                                        if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "产量统计"))
                                         {
                                             Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "产量统计");
                                         }
@@ -173,10 +228,39 @@ namespace NFCDemo
                                             new[]
                                             {
                                                 DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                LastUser.Name, Global.MachineID, a[0].ToString()
+                                                LastUser.Name, Global.MachineID, PLCManager.Count.ToString()
                                             });
                                         LdrLog("保存csv成功，文件位置：" + path);
                                         LastUser = user;
+                                        var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
+                                        newAllLines.RemoveAt(0);
+                                        var newAllYield = new List<Yield>();
+                                        foreach (var line in newAllLines)
+                                        {
+                                            var items = line.Split(',');
+                                            var name = items[2];
+                                            var count1 = int.Parse(items[4]);
+                                            var yield = newAllYield.FirstOrDefault(x => x.Name == name);
+                                            if (yield == null)
+                                            {
+                                                newAllYield.Add(new Yield() { Name = name, Count = count1 });
+                                            }
+                                            else
+                                            {
+                                                yield.Count += count1;
+                                            }
+                                        }
+                                        Application.Current.Dispatcher.Invoke(() =>
+                                        {
+                                            MainWindowViewModel.AllYield.Clear();
+                                            foreach (var yield in newAllYield)
+                                            {
+                                                MainWindowViewModel.AllYield.Add(yield);
+                                            }
+                                        });
+                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
+                                        Thread.Sleep(300);
+                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 100, new[] { 1 });
                                     }
                                 }
                                 else
@@ -298,6 +382,18 @@ namespace NFCDemo
         {
             userManager = new UserManager();
             userManager.ShowDialog();
+        }
+
+        private void Set_Btn_Click(object sender, RoutedEventArgs e)
+        {
+            SetWindow setWindow = new SetWindow();
+            setWindow.ShowDialog();
+        }
+
+        private void Search_Btn_Click(object sender, RoutedEventArgs e)
+        {
+            SearchWindow searchWindow = new SearchWindow();
+            searchWindow.ShowDialog();
         }
     }
 }

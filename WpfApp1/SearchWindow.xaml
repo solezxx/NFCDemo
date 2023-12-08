@@ -1,0 +1,51 @@
+﻿<Window
+    x:Class="NFCDemo.SearchWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:NFCDemo"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="SearchWindow"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+    <Window.DataContext>
+        <local:MainWindowViewModel />
+    </Window.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <TextBlock Text="开始时间" />
+            <DatePicker x:Name="StartTime" />
+            <TextBlock Text="结束时间" />
+            <DatePicker x:Name="EndTime" />
+
+            <Button
+                Margin="10,0,0,0"
+                Click="Search_Click"
+                Content="查询" />
+        </StackPanel>
+
+        <ListView Grid.Row="1" ItemsSource="{Binding SearchList}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn
+                        Width="100"
+                        DisplayMemberBinding="{Binding Name}"
+                        Header="姓名" />
+                    <GridViewColumn
+                        Width="100"
+                        DisplayMemberBinding="{Binding MachineId}"
+                        Header="机台编号" />
+                    <GridViewColumn
+                        Width="100"
+                        DisplayMemberBinding="{Binding Count}"
+                        Header="产量" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</Window>
