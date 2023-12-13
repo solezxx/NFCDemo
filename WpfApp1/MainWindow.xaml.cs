@@ -1,6 +1,7 @@
 ﻿using Demo;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,17 +33,20 @@ namespace NFCDemo
             PLCManager.Initialize();
             PLCManager.XinjiePLC.ModbusStateChanged += Modbus_ConnectStateChanged;
             PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
-            OpenCom();
-            ReadA();
+            for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+            {
+                OpenCom(i);
+                ReadNfc(i);
+            }
         }
 
-        private void PLCManager_PLCStopChanged(object sender, EventArgs e)
+        private void PLCManager_PLCStopChanged(object sender, int e)
         {
-            if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "产量统计"))
+            if (!Directory.Exists(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}"))
             {
-                Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "产量统计");
+                Directory.CreateDirectory(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}");
             }
-            string path = AppDomain.CurrentDomain.BaseDirectory + $"产量统计\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+            string path = Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
             if (!File.Exists(path))
             {
                 CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
@@ -58,39 +62,45 @@ namespace NFCDemo
                 new[]
                 {
                     DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                    LastUser.Name, Global.MachineID, PLCManager.Count.ToString()
+                    LastUser.Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
                 });
             LdrLog("保存csv成功，文件位置：" + path);
             LastUser = null;
-            var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
-            newAllLines.RemoveAt(0);
-            var newAllYield = new List<Yield>();
-            foreach (var line in newAllLines)
-            {
-                var items = line.Split(',');
-                var name = items[2];
-                var count1 = int.Parse(items[4]);
-                var yield = newAllYield.FirstOrDefault(x => x.Name == name);
-                if (yield == null)
-                {
-                    newAllYield.Add(new Yield() { Name = name, Count = count1 });
-                }
-                else
-                {
-                    yield.Count += count1;
-                }
-            }
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                MainWindowViewModel.AllYield.Clear();
-                foreach (var yield in newAllYield)
-                {
-                    MainWindowViewModel.AllYield.Add(yield);
-                }
-            });
-            PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
+            ReadCsvRefresh(path, e);
+            PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
         }
+        /// <summary>
+        /// 读取csv文件，刷新界面统计产量
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="e"></param>
+        public async void ReadCsvRefresh(string path, int e)
+        {
+            await Task.Run((() =>
+            {
+                var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
+                newAllLines.RemoveAt(0);
 
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var line in newAllLines)
+                    {
+                        var items = line.Split(',');
+                        var name = items[2];
+                        var count1 = int.Parse(items[4]);
+                        var yield = MainWindowViewModel.DisplayCollection[e].FirstOrDefault(x => x.UserName == name);
+                        if (yield == null)
+                        {
+                            MainWindowViewModel.DisplayCollection[e].Add(new LocalStatistic() { UserName = name, UserCount = count1 });
+                        }
+                        else
+                        {
+                            yield.UserCount += count1;
+                        }
+                    }
+                });
+            }));
+        }
         private void Modbus_ConnectStateChanged(object sender, bool e)
         {
             Dispatcher.BeginInvoke(new Action((() =>
@@ -111,18 +121,18 @@ namespace NFCDemo
         MainWindowViewModel viewModel;
 
         User LastUser = null;
-        public void OpenCom()
+        public void OpenCom(int index)
         {
             if (IntPtr.Zero == reader.GetHComm())                   //判断串口是否打开
             {
-                int ret = reader.OpenComm(Convert.ToInt32(Global.NFCCom.Replace("COM", "")), int.Parse(Global.BaudRate));
+                int ret = reader.OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM","")), 9600);
                 if (0 == ret)
                 {
-                    LdrLog("NFC Open success!");
+                    LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open success!");
                 }
                 else
                 {
-                    LdrLog("NFC Open failed!");
+                    LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open failed!");
                 }
             }
         }
@@ -138,8 +148,9 @@ namespace NFCDemo
                 PlcState.Fill = new SolidColorBrush(Colors.Red);
             }
         }
-        private async void ReadA()
+        private async void ReadNfc(int machineIndex)
         {
+            var machineName = MainWindowViewModel.MachineDatas[machineIndex].Name;
             await Task.Run((() =>
             {
                 while (true)
@@ -198,21 +209,29 @@ namespace NFCDemo
                                 if (user != null)
                                 {
                                     LdrLog("扫到人员：" + user.Name);
-
-                                    MessageBox.Show("扫到人员：" + user.Name, "提示", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-
-                                    if (LastUser == null)
+                                    if (user.ID== "87 32 E9 BF")
                                     {
-                                        LastUser = user;
-                                        LdrLog("第一次上机，不保存");
+                                        Button_Admin1.Visibility = Visibility.Visible;
+                                        Button_Admin2.Visibility = Visibility.Visible;
                                     }
                                     else
                                     {
-                                        if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "产量统计"))
+                                        Button_Admin1.Visibility = Visibility.Collapsed;
+                                        Button_Admin2.Visibility = Visibility.Collapsed;
+                                    }
+                                    //MessageBox.Show("扫到人员：" + user.Name, "提示", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
+                                    LdrLog($"扫到人员：{user.Name}");
+                                    if (LastUser == null)
+                                    {
+                                        LastUser = user;
+                                    }
+                                    else
+                                    {
+                                        if (!Directory.Exists(Global.SavePath + machineName))
                                         {
-                                            Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "产量统计");
+                                            Directory.CreateDirectory(Global.SavePath + machineName);
                                         }
-                                        string path = AppDomain.CurrentDomain.BaseDirectory + $"产量统计\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+                                        string path = Global.SavePath + machineName + $"{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
                                         if (!File.Exists(path))
                                         {
                                             CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
@@ -232,36 +251,13 @@ namespace NFCDemo
                                             });
                                         LdrLog("保存csv成功，文件位置：" + path);
                                         LastUser = user;
-                                        var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
-                                        newAllLines.RemoveAt(0);
-                                        var newAllYield = new List<Yield>();
-                                        foreach (var line in newAllLines)
-                                        {
-                                            var items = line.Split(',');
-                                            var name = items[2];
-                                            var count1 = int.Parse(items[4]);
-                                            var yield = newAllYield.FirstOrDefault(x => x.Name == name);
-                                            if (yield == null)
-                                            {
-                                                newAllYield.Add(new Yield() { Name = name, Count = count1 });
-                                            }
-                                            else
-                                            {
-                                                yield.Count += count1;
-                                            }
-                                        }
-                                        Application.Current.Dispatcher.Invoke(() =>
-                                        {
-                                            MainWindowViewModel.AllYield.Clear();
-                                            foreach (var yield in newAllYield)
-                                            {
-                                                MainWindowViewModel.AllYield.Add(yield);
-                                            }
-                                        });
-                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
-                                        Thread.Sleep(300);
-                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 100, new[] { 1 });
+                                        ReadCsvRefresh(path, machineIndex);
                                     }
+
+                                    //只要扫到有人员就给信号
+                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
+                                    Thread.Sleep(300);
+                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 100, new[] { 1 });
                                 }
                                 else
                                 {
@@ -286,14 +282,13 @@ namespace NFCDemo
                                             {
                                                 MainWindowViewModel.AllUser.Add(new User() { ID = strTmp, Name = name });
                                             });
-                                            LdrLog($"添加人员{name},卡号{strTmp}");
-                                            LdrLog("如需保存产量，请录入后再次刷卡，否则无效");
+                                            LdrLog($"添加人员{name},卡号{strTmp},如需保存产量，请重新刷卡，否则无效！");
                                         }
                                     }
                                 }
                             }
                         }
-                        Thread.Sleep(100);
+                        Thread.Sleep(1000);
                     }
                     catch (Exception e)
                     {

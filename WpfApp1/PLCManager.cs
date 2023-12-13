@@ -34,12 +34,12 @@ namespace NFCDemo
                     try
                     {
                         System.Threading.Thread.Sleep(100);
-                        var count = XinjiePLC.ModbusRead(1, 3, 0, 1);
-                        var stop = XinjiePLC.ModbusRead(1, 1, 300, 1);
+                        var count = XinjiePLC.ModbusRead(1, 3, 0, 100);
+                        var stop = XinjiePLC.ModbusRead(1, 1, 300, 100);
                         if (count == null || stop == null)
                             continue;
-                        Count = count[0];
-                        Stop = stop[0] == 1;
+                        Count = count;
+                        Stop = stop;
                     }
                     catch (Exception ex)
                     {
@@ -49,9 +49,9 @@ namespace NFCDemo
             });
         }
 
-        private static int _count;
+        private static int[] _count;
 
-        public static int Count
+        public static int[] Count
         {
             get { return _count; }
             set
@@ -60,25 +60,31 @@ namespace NFCDemo
                 PLCCountChanged?.Invoke(null, null);
             }
         }
-        private static bool _stop;
+        private static int[] _stop=new int[100];
 
-        public static bool Stop
+        public static int[] Stop
         {
             get { return _stop; }
             set
             {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    if (value[i] != _stop[i])
+                    {
+                        if (value[i] == 1)
+                            PLCStopChanged?.Invoke(null, i);
+                    }
+                }
                 _stop = value;
-                if (_stop)
-                    PLCStopChanged?.Invoke(null, null);
             }
         }
 
         public static event EventHandler<int> PLCStatusChanged;
         public static event EventHandler PLCCountChanged;
-        public static event EventHandler PLCStopChanged;
+        public static event EventHandler<int> PLCStopChanged;
 
 
-        static int[] mPLCStatus = new int[6];
+        static int[] mPLCStatus = new int[100];
         public static int[] PLCStatus
         {
             get { return mPLCStatus; }

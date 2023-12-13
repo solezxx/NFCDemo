@@ -17,9 +17,64 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="超时自动保存：" />
                 <TextBox Width="100" Text="{Binding TimeOut}" />
-                <TextBlock Text="秒"></TextBlock>
+                <TextBlock Text="秒" />
             </StackPanel>
-            <Button Content="保存" Width="100" Height="40" Click="Save_Btn_Click"/>
+            <Grid Height="200">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <DataGrid
+                    x:Name="DataGrid"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    CanUserReorderColumns="False"
+                    CanUserSortColumns="False"
+                    GridLinesVisibility="All"
+                    ItemsSource="{Binding MachineDatas}"
+                    RowHeaderWidth="0"
+                    SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn
+                            Width="80"
+                            Binding="{Binding Open}"
+                            CanUserResize="False"
+                            Header="启用" />
+                        <DataGridTextColumn
+                            Width="100"
+                            Binding="{Binding Name}"
+                            Header="名字" />
+                        <DataGridTextColumn
+                            Width="100"
+                            Binding="{Binding COM}"
+                            Header="COM口" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <Button
+                        Width="100"
+                        Height="30"
+                        Margin="10"
+                        Click="Add_click"
+                        Content="增加" />
+                    <Button
+                        Width="100"
+                        Height="30"
+                        Margin="10"
+                        Click="Delete_click"
+                        Content="删除" />
+                </StackPanel>
+            </Grid>
+
+            <Button
+                Width="100"
+                Height="40"
+                Click="Save_Btn_Click"
+                Content="保存" />
+
         </StackPanel>
     </Grid>
 </Window>

@@ -40,31 +40,6 @@ namespace NFCDemo
 
         #endregion
 
-        #region 读卡器参数
-
-        static string _nfcCom = "COM2";
-        public static string NFCCom
-        {
-            get { return _nfcCom; }
-            set
-            {
-                _nfcCom = value;
-                DXH.Ini.DXHIni.WritePrivateProfileString("读卡器参数", "串口号", _nfcCom, GlobalFile);
-            }
-        }
-        static string baudRate = "9600";
-        public static string BaudRate
-        {
-            get { return baudRate; }
-            set
-            {
-                baudRate = value;
-                DXH.Ini.DXHIni.WritePrivateProfileString("读卡器参数", "波特率", baudRate, GlobalFile);
-            }
-        }
-
-        #endregion
-
         #region 其他
 
         static string machineid = "1";
@@ -99,9 +74,6 @@ namespace NFCDemo
                 mModbusRTU_COM = DXH.Ini.DXHIni.ContentReader("PLC参数", "串口号", mModbusRTU_COM, GlobalFile);
                 plcbaudRate = DXH.Ini.DXHIni.ContentReader("PLC参数", "波特率", plcbaudRate, GlobalFile);
 
-                _nfcCom = DXH.Ini.DXHIni.ContentReader("读卡器参数", "串口号", _nfcCom, GlobalFile);
-                baudRate = DXH.Ini.DXHIni.ContentReader("读卡器参数", "波特率", baudRate, GlobalFile);
-
                 machineid = DXH.Ini.DXHIni.ContentReader("其他", "机台编号", machineid, GlobalFile);
                 timeout = DXH.Ini.DXHIni.ContentReader("其他", "超时时间", timeout, GlobalFile);
             }
@@ -110,13 +82,12 @@ namespace NFCDemo
                 ModbusRTU_COM = mModbusRTU_COM;
                 PLCBaudRate = plcbaudRate;
 
-                NFCCom = _nfcCom;
-                BaudRate = baudRate;
-
                 MachineID = machineid;
                 TimeOut = timeout;
             }
         }
+
+        public static string SavePath = AppDomain.CurrentDomain.BaseDirectory + "SaveData/";
         public static string FilePath = Directory.GetCurrentDirectory() + "/logs/";
         static object LogLock = new object();
         public static async void SaveLog(string message)

@@ -61,14 +61,14 @@ namespace NFCDemo
                         string name = items[2];
                         string id = items[3];
                         int count = int.Parse(items[4]);
-                        LocalStatistic localStatistic = localStatistics.FirstOrDefault(x => x.Name == name);
+                        LocalStatistic localStatistic = localStatistics.FirstOrDefault(x => x.UserName == name);
                         if (localStatistic == null)
                         {
-                            localStatistics.Add(new LocalStatistic() { Name = name,MachineId =id, Count = count });
+                            localStatistics.Add(new LocalStatistic() { UserName = name,MachineId =id, UserCount = count });
                         }
                         else
                         {
-                            localStatistic.Count += count;
+                            localStatistic.UserCount += count;
                         }
                     }
                 }
