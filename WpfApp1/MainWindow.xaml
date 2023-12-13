@@ -80,39 +80,57 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0">
-                <ItemsControl
-                    BorderThickness="1"
-                    ItemsSource="{Binding DisplayCollection}"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="5">
-                                <ListView
-                                    Grid.Column="0"
-                                    FontSize="20"
-                                    ItemsSource="{Binding}">
-                                    <ListView.View>
-                                        <GridView>
-                                            <GridViewColumn
-                                                Width="100"
-                                                DisplayMemberBinding="{Binding UserName}"
-                                                Header="姓名" />
-                                            <GridViewColumn
-                                                Width="100"
-                                                DisplayMemberBinding="{Binding UserCount}"
-                                                Header="今日产量" />
-                                        </GridView>
-                                    </ListView.View>
-                                </ListView>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ScrollViewer>
+                    <ItemsControl
+                        BorderThickness="1"
+                        ItemsSource="{Binding DisplayCollection}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="5">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="0,0,0,5"
+                                                Background="Black"
+                                                FontSize="20"
+                                                Foreground="White">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="{}{0}-当前产量 : {1}">
+                                                        <Binding Path="MachineName" />
+                                                        <Binding Mode="TwoWay" Path="MachineCount" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <ListView
+                                            Grid.Column="0"
+                                            FontSize="20"
+                                            ItemsSource="{Binding Statistics}">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn
+                                                        Width="100"
+                                                        DisplayMemberBinding="{Binding UserName}"
+                                                        Header="姓名" />
+                                                    <GridViewColumn
+                                                        Width="100"
+                                                        DisplayMemberBinding="{Binding UserCount}"
+                                                        Header="今日产量" />
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
             <GroupBox
                 Grid.Column="1"
@@ -125,6 +143,7 @@
                     <TextBox
                         x:Name="TextBox"
                         IsReadOnly="True"
+                        KeyDown="TextBox_KeyDown"
                         SelectionChanged="TextBox_SelectionChanged"
                         SizeChanged="TextBox_SizeChanged"
                         Style="{x:Null}"

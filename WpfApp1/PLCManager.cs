@@ -34,8 +34,8 @@ namespace NFCDemo
                     try
                     {
                         System.Threading.Thread.Sleep(100);
-                        var count = XinjiePLC.ModbusRead(1, 3, 0, 100);
-                        var stop = XinjiePLC.ModbusRead(1, 1, 300, 100);
+                        var count = XinjiePLC.ModbusRead(1, 3, 0, 20);
+                        var stop = XinjiePLC.ModbusRead(1, 1, 300, 20);
                         if (count == null || stop == null)
                             continue;
                         Count = count;
@@ -49,7 +49,7 @@ namespace NFCDemo
             });
         }
 
-        private static int[] _count;
+        private static int[] _count = new int[20];
 
         public static int[] Count
         {
@@ -60,7 +60,7 @@ namespace NFCDemo
                 PLCCountChanged?.Invoke(null, null);
             }
         }
-        private static int[] _stop=new int[100];
+        private static int[] _stop = new int[20];
 
         public static int[] Stop
         {

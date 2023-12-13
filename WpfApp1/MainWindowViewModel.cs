@@ -7,20 +7,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using DXH.ViewModel;
 
 namespace NFCDemo
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public int[] Count
-        {
-            get
-            {
-                return PLCManager.Count;
-            }
-        }
-
         public MainWindowViewModel()
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + "user.csv";
@@ -53,6 +46,14 @@ namespace NFCDemo
 
             for (int i = 0; i < MachineDatas.Count; i++)
             {
+                if (DisplayCollection.Count <= i)
+                {
+                    DisplayCollection.Add(new DisplayData() { MachineName = MachineDatas[i].Name, Statistics = new ObservableCollection<LocalStatistic>() });
+                }
+                else
+                {
+                    DisplayCollection[i].MachineName = MachineDatas[i].Name;
+                }
                 path = Global.SavePath + $"{MachineDatas[i].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
                 if (File.Exists(path))
                 {
@@ -66,10 +67,10 @@ namespace NFCDemo
                             var items = line.Split(',');
                             var name = items[2];
                             var count1 = int.Parse(items[4]);
-                            var yield = DisplayCollection[i].FirstOrDefault(x => x.UserName == name);
+                            var yield = DisplayCollection[i].Statistics.FirstOrDefault(x => x.UserName == name);
                             if (yield == null)
                             {
-                                DisplayCollection[i].Add(new LocalStatistic() { UserName = name,UserCount = count1 });
+                                DisplayCollection[i].Statistics.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
                             }
                             else
                             {
@@ -83,7 +84,11 @@ namespace NFCDemo
 
         private void PLCManager_PLCCountChanged(object sender, EventArgs e)
         {
-            OnPropertyChanged(nameof(Count));
+            for (int i = 0; i < DisplayCollection.Count; i++)
+          
+            {
+                DisplayCollection[i].MachineCount = PLCManager.Count[i];
+            }
         }
 
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
@@ -99,7 +104,7 @@ namespace NFCDemo
         }
 
         public static ObservableCollection<User> AllUser { get; set; } = new ObservableCollection<User>();
-        public static ObservableCollection<ObservableCollection<LocalStatistic>> DisplayCollection { get; set; } = new ObservableCollection<ObservableCollection<LocalStatistic>>();
+        public static ObservableCollection<DisplayData> DisplayCollection { get; set; } = new ObservableCollection<DisplayData>();
         public static ObservableCollection<LocalStatistic> SearchList { get; set; } = new ObservableCollection<LocalStatistic>();
         public static ObservableCollection<MachineData> MachineDatas { get; set; } = new ObservableCollection<MachineData>();
 
@@ -136,7 +141,35 @@ namespace NFCDemo
     public class MachineData
     {
         public string Name { get; set; }
-        public bool Open { get; set; }
         public string COM { get; set; }
+    }
+
+    public class DisplayData:ViewModelBase
+    {
+        private string _machineName;
+
+        public string MachineName
+        {
+            get { return _machineName; }
+            set
+            {
+                _machineName = value; 
+                OnPropertyChanged(nameof(MachineName));
+            }
+        }
+
+        private int _machineCount;
+
+        public int MachineCount
+        {
+            get { return _machineCount; }
+            set
+            {
+                _machineCount = value;
+                OnPropertyChanged(nameof(MachineCount));
+            }
+        }
+
+        public ObservableCollection<LocalStatistic> Statistics { get; set; }
     }
 }

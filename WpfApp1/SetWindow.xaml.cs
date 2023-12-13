@@ -29,7 +29,12 @@ namespace NFCDemo
         {
             try
             {
-                PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, new int[] { int.Parse(Global.TimeOut)*10 });
+                List<int> list = new List<int>();
+                for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+                {
+                    list.Add(int.Parse(Global.TimeOut) * 10);
+                }
+                PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, list.ToArray());
                 //保存到json文件
                 string json = JsonConvert.SerializeObject(MainWindowViewModel.MachineDatas);
                 System.IO.File.WriteAllText("MachineData.json", json);
@@ -47,7 +52,6 @@ namespace NFCDemo
             MainWindowViewModel.MachineDatas.Add(new MachineData()
             {
                 Name = "输入名字",
-                Open = true,
                 COM = "COM1"
             });
         }

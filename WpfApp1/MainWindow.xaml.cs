@@ -42,32 +42,39 @@ namespace NFCDemo
 
         private void PLCManager_PLCStopChanged(object sender, int e)
         {
-            if (!Directory.Exists(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}"))
+            try
             {
-                Directory.CreateDirectory(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}");
-            }
-            string path = Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
-            if (!File.Exists(path))
-            {
-                CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
-            }
-            //判断文件是否打开
-            if (IsFileInUse(path))
-            {
-                LdrLog("文件被占用，请关闭文件后再试");
-                MessageBox.Show("文件被占用，请关闭文件后再试");
-                return;
-            }
-            CSVFile.AddNewLine(path,
-                new[]
+                if (!Directory.Exists(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}"))
                 {
+                    Directory.CreateDirectory(Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}");
+                }
+                string path = Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+                if (!File.Exists(path))
+                {
+                    CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                }
+                //判断文件是否打开
+                if (IsFileInUse(path))
+                {
+                    LdrLog("文件被占用，请关闭文件后再试");
+                    MessageBox.Show("文件被占用，请关闭文件后再试");
+                    return;
+                }
+                CSVFile.AddNewLine(path,
+                    new[]
+                    {
                     DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
                     LastUser.Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
-                });
-            LdrLog("保存csv成功，文件位置：" + path);
-            LastUser = null;
-            ReadCsvRefresh(path, e);
-            PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
+                    });
+                LdrLog("保存csv成功，文件位置：" + path);
+                LastUser = null;
+                ReadCsvRefresh(path, e);
+                PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message);
+            }
         }
         /// <summary>
         /// 读取csv文件，刷新界面统计产量
@@ -88,10 +95,10 @@ namespace NFCDemo
                         var items = line.Split(',');
                         var name = items[2];
                         var count1 = int.Parse(items[4]);
-                        var yield = MainWindowViewModel.DisplayCollection[e].FirstOrDefault(x => x.UserName == name);
+                        var yield = MainWindowViewModel.DisplayCollection[e].Statistics.FirstOrDefault(x => x.UserName == name);
                         if (yield == null)
                         {
-                            MainWindowViewModel.DisplayCollection[e].Add(new LocalStatistic() { UserName = name, UserCount = count1 });
+                            MainWindowViewModel.DisplayCollection[e].Statistics.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
                         }
                         else
                         {
@@ -118,6 +125,8 @@ namespace NFCDemo
         }
 
         UserManager userManager;
+        SetWindow setWindow;
+        SearchWindow searchWindow;
         MainWindowViewModel viewModel;
 
         User LastUser = null;
@@ -125,7 +134,7 @@ namespace NFCDemo
         {
             if (IntPtr.Zero == reader.GetHComm())                   //判断串口是否打开
             {
-                int ret = reader.OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM","")), 9600);
+                int ret = reader.OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM", "")), 9600);
                 if (0 == ret)
                 {
                     LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open success!");
@@ -209,18 +218,6 @@ namespace NFCDemo
                                 if (user != null)
                                 {
                                     LdrLog("扫到人员：" + user.Name);
-                                    if (user.ID== "87 32 E9 BF")
-                                    {
-                                        Button_Admin1.Visibility = Visibility.Visible;
-                                        Button_Admin2.Visibility = Visibility.Visible;
-                                    }
-                                    else
-                                    {
-                                        Button_Admin1.Visibility = Visibility.Collapsed;
-                                        Button_Admin2.Visibility = Visibility.Collapsed;
-                                    }
-                                    //MessageBox.Show("扫到人员：" + user.Name, "提示", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
-                                    LdrLog($"扫到人员：{user.Name}");
                                     if (LastUser == null)
                                     {
                                         LastUser = user;
@@ -231,7 +228,7 @@ namespace NFCDemo
                                         {
                                             Directory.CreateDirectory(Global.SavePath + machineName);
                                         }
-                                        string path = Global.SavePath + machineName + $"{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+                                        string path = Global.SavePath + machineName + $"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
                                         if (!File.Exists(path))
                                         {
                                             CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
@@ -247,7 +244,7 @@ namespace NFCDemo
                                             new[]
                                             {
                                                 DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                LastUser.Name, Global.MachineID, PLCManager.Count.ToString()
+                                                LastUser.Name, Global.MachineID, PLCManager.Count[machineIndex].ToString()
                                             });
                                         LdrLog("保存csv成功，文件位置：" + path);
                                         LastUser = user;
@@ -255,9 +252,9 @@ namespace NFCDemo
                                     }
 
                                     //只要扫到有人员就给信号
-                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 200, new[] { 1 });
+                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + machineIndex, new[] { 1 });
                                     Thread.Sleep(300);
-                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 100, new[] { 1 });
+                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 100 + machineIndex, new[] { 1 });
                                 }
                                 else
                                 {
@@ -381,14 +378,42 @@ namespace NFCDemo
 
         private void Set_Btn_Click(object sender, RoutedEventArgs e)
         {
-            SetWindow setWindow = new SetWindow();
+            setWindow = new SetWindow();
             setWindow.ShowDialog();
         }
 
         private void Search_Btn_Click(object sender, RoutedEventArgs e)
         {
-            SearchWindow searchWindow = new SearchWindow();
+            searchWindow = new SearchWindow();
             searchWindow.ShowDialog();
+        }
+
+        private int keycount = 0;
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.V)
+            {
+                keycount++;
+            }
+            else
+            {
+                keycount = 0;
+            }
+
+            if (keycount == 5)
+            {
+                keycount = 0;
+                if (Button_Admin1.Visibility == Visibility.Collapsed)
+                {
+                    Button_Admin1.Visibility = Visibility.Visible;
+                    Button_Admin2.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    Button_Admin1.Visibility = Visibility.Collapsed;
+                    Button_Admin2.Visibility = Visibility.Collapsed;
+                }
+            }
         }
     }
 }
