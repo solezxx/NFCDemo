@@ -35,9 +35,10 @@ namespace Demo
         {
             if (IntPtr.Zero != m_hComm)
                 return 1;
-            if (com < 1 || com > 8)
+            if (com < 1 || com > 108)
                 return 3;
             m_hComm = API_OpenComm(com, bp);
+            API_OpenComm(com, bp);
             if (IntPtr.Zero == m_hComm)
                 return 2;
             //////////////////////////////////////////////////////////////////////////

@@ -85,7 +85,7 @@ namespace NFCDemo
         private void PLCManager_PLCCountChanged(object sender, EventArgs e)
         {
             for (int i = 0; i < DisplayCollection.Count; i++)
-          
+
             {
                 DisplayCollection[i].MachineCount = PLCManager.Count[i];
             }
@@ -128,11 +128,43 @@ namespace NFCDemo
     /// <summary>
     /// 产量统计
     /// </summary>
-    public class LocalStatistic
+    public class LocalStatistic:ViewModelBase
     {
-        public string UserName { get; set; }
-        public string MachineId { get; set; }
-        public int UserCount { get; set; }
+        private string _userName;
+
+        public string UserName
+        {
+            get { return _userName; }
+            set
+            {
+                _userName = value;
+                OnPropertyChanged(nameof(UserName));
+            }
+        }
+
+        private string _machineId;
+
+        public string MachineId
+        {
+            get { return _machineId; }
+            set
+            {
+                _machineId = value; 
+                OnPropertyChanged(nameof(MachineId));
+            }
+        }
+
+        private int _userCount;
+
+        public int UserCount
+        {
+            get { return _userCount; }
+            set
+            {
+                _userCount = value;
+                OnPropertyChanged(nameof(UserCount));
+            }
+        }
     }
 
     /// <summary>
@@ -144,7 +176,7 @@ namespace NFCDemo
         public string COM { get; set; }
     }
 
-    public class DisplayData:ViewModelBase
+    public class DisplayData : ViewModelBase
     {
         private string _machineName;
 
@@ -153,7 +185,7 @@ namespace NFCDemo
             get { return _machineName; }
             set
             {
-                _machineName = value; 
+                _machineName = value;
                 OnPropertyChanged(nameof(MachineName));
             }
         }
@@ -169,7 +201,6 @@ namespace NFCDemo
                 OnPropertyChanged(nameof(MachineCount));
             }
         }
-
-        public ObservableCollection<LocalStatistic> Statistics { get; set; }
+        public ObservableCollection<LocalStatistic> Statistics { get ; set; }
     }
 }

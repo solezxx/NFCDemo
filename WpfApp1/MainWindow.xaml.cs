@@ -35,8 +35,8 @@ namespace NFCDemo
             PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
             for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
             {
+                reader[i] = new CReader();
                 OpenCom(i);
-                ReadNfc(i);
             }
         }
 
@@ -53,21 +53,28 @@ namespace NFCDemo
                 {
                     CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
                 }
-                //判断文件是否打开
-                if (IsFileInUse(path))
+                ////判断文件是否打开
+                //if (IsFileInUse(path))
+                //{
+                //    LdrLog("文件被占用，请关闭文件后再试");
+                //    MessageBox.Show("文件被占用，请关闭文件后再试");
+                //    return;
+                //}
+
+                if (LastUser[e] == null)
                 {
-                    LdrLog("文件被占用，请关闭文件后再试");
-                    MessageBox.Show("文件被占用，请关闭文件后再试");
+                    LdrLog("未刷卡");
+                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
                     return;
                 }
                 CSVFile.AddNewLine(path,
                     new[]
                     {
                     DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                    LastUser.Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
+                    LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
                     });
                 LdrLog("保存csv成功，文件位置：" + path);
-                LastUser = null;
+                LastUser[e] = null;
                 ReadCsvRefresh(path, e);
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
             }
@@ -85,6 +92,7 @@ namespace NFCDemo
         {
             await Task.Run((() =>
             {
+                var newList = new List<LocalStatistic>();
                 var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
                 newAllLines.RemoveAt(0);
 
@@ -95,15 +103,20 @@ namespace NFCDemo
                         var items = line.Split(',');
                         var name = items[2];
                         var count1 = int.Parse(items[4]);
-                        var yield = MainWindowViewModel.DisplayCollection[e].Statistics.FirstOrDefault(x => x.UserName == name);
+                        var yield = newList.FirstOrDefault(x => x.UserName == name);
                         if (yield == null)
                         {
-                            MainWindowViewModel.DisplayCollection[e].Statistics.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
+                            newList.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
                         }
                         else
                         {
                             yield.UserCount += count1;
                         }
+                    }
+                    MainWindowViewModel.DisplayCollection[e].Statistics.Clear();
+                    foreach (var item in newList)
+                    {
+                        MainWindowViewModel.DisplayCollection[e].Statistics.Add(item);
                     }
                 });
             }));
@@ -129,19 +142,21 @@ namespace NFCDemo
         SearchWindow searchWindow;
         MainWindowViewModel viewModel;
 
-        User LastUser = null;
+        User[] LastUser = new User[20];
         public void OpenCom(int index)
         {
-            if (IntPtr.Zero == reader.GetHComm())                   //判断串口是否打开
+            if (IntPtr.Zero == reader[index].GetHComm())                   //判断串口是否打开
             {
-                int ret = reader.OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM", "")), 9600);
+                int ret = reader[index].OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM", "")), 9600);
                 if (0 == ret)
                 {
                     LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open success!");
+                    ReadNfc(index);
                 }
                 else
                 {
                     LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open failed!");
+                    MessageBox.Show($"NFC {MainWindowViewModel.MachineDatas[index].Name} 打开失败!", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
         }
@@ -157,6 +172,7 @@ namespace NFCDemo
                 PlcState.Fill = new SolidColorBrush(Colors.Red);
             }
         }
+        object lockObj = new object();
         private async void ReadNfc(int machineIndex)
         {
             var machineName = MainWindowViewModel.MachineDatas[machineIndex].Name;
@@ -166,126 +182,142 @@ namespace NFCDemo
                 {
                     try
                     {
-                        if (IntPtr.Zero != reader.GetHComm())                             //判断串口是否打开
+                        lock (lockObj)
                         {
-                            string strTmp = "\r\n ";
-                            byte[] buf = new byte[256];
-                            byte[] snr = new byte[128];
-                            byte mode, blkStart, blkNum = 0;
-                            int deviceAddr = CPublic.HexStringToInt("00");    //获得设备地址
-                            if (deviceAddr < 0 || deviceAddr > 255)
+                            if (IntPtr.Zero != reader[machineIndex].GetHComm()) //判断串口是否打开
                             {
-                                LdrLog("Device address must between 0X00-0XFF!");
-                                continue;
-                            }
-
-                            mode = (byte)0;
-                            blkNum = (byte)1;
-                            blkStart = (byte)0;
-                            strTmp = CPublic.StrToHexStr("FF FF FF FF FF FF");
-                            snr = CPublic.CharToByte(strTmp);                           //获得卡号
-
-                            int ret = reader.MF_Read(deviceAddr, mode, blkStart, blkNum, ref snr[0], ref buf[0]);
-
-                            if (0 == ret)
-                            {
-                                strTmp = "";
-                                LdrLog("SN of card is:");
-
-                                int count = 0;
-                                while (snr[count++] != 0x00) ;
-                                count--;
-
-                                if (count == 4)
+                                string strTmp = "\r\n ";
+                                byte[] buf = new byte[256];
+                                byte[] snr = new byte[128];
+                                byte mode, blkStart, blkNum = 0;
+                                int deviceAddr = CPublic.HexStringToInt("00"); //获得设备地址
+                                if (deviceAddr < 0 || deviceAddr > 255)
                                 {
-                                    for (int i = 0; i < 4; i++)
-                                    {
-                                        strTmp += string.Format("{0:X2} ", snr[i]);
-                                    }
-                                }
-                                else if (count == 7)
-                                {
-                                    for (int i = 0; i < 7; i++)
-                                    {
-                                        strTmp += string.Format("{0:X2} ", snr[i]);
-                                    }
+                                    LdrLog("Device address must between 0X00-0XFF!");
+                                    continue;
                                 }
 
-                                LdrLog(strTmp);
+                                mode = (byte)0;
+                                blkNum = (byte)1;
+                                blkStart = (byte)0;
+                                strTmp = CPublic.StrToHexStr("FF FF FF FF FF FF");
+                                snr = CPublic.CharToByte(strTmp); //获得卡号
 
-                                //匹配用户
-                                var user = MainWindowViewModel.AllUser.FirstOrDefault(x => x.ID == strTmp);
-                                if (user != null)
+                                int ret = reader[machineIndex].MF_Read(deviceAddr, mode, blkStart, blkNum, ref snr[0],
+                                    ref buf[0]);
+
+                                if (0 == ret)
                                 {
-                                    LdrLog("扫到人员：" + user.Name);
-                                    if (LastUser == null)
+                                    reader[machineIndex].ControlBuzzer(deviceAddr, (byte)10, (byte)1, ref buf[0]);
+                                    strTmp = "";
+                                    int count = 0;
+                                    while (snr[count++] != 0x00) ;
+                                    count--;
+
+                                    if (count == 4)
                                     {
-                                        LastUser = user;
+                                        for (int i = 0; i < 4; i++)
+                                        {
+                                            strTmp += string.Format("{0:X2} ", snr[i]);
+                                        }
+                                    }
+                                    else if (count == 7)
+                                    {
+                                        for (int i = 0; i < 7; i++)
+                                        {
+                                            strTmp += string.Format("{0:X2} ", snr[i]);
+                                        }
+                                    }
+
+                                    LdrLog("SN of card is:" + strTmp);
+
+                                    //匹配用户
+                                    var user = MainWindowViewModel.AllUser.FirstOrDefault(x => x.ID == strTmp);
+                                    if (user != null)
+                                    {
+                                        LdrLog($"{machineName}扫到人员：" + user.Name);
+                                        if (LastUser[machineIndex] == null)
+                                        {
+                                            LastUser[machineIndex] = user;
+                                        }
+                                        else
+                                        {
+                                            if (!Directory.Exists(Global.SavePath + machineName))
+                                            {
+                                                Directory.CreateDirectory(Global.SavePath + machineName);
+                                            }
+
+                                            string path = Global.SavePath + machineName +
+                                                          $"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
+                                            if (!File.Exists(path))
+                                            {
+                                                CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                                            }
+
+                                            ////判断文件是否打开
+                                            //if (IsFileInUse(path))
+                                            //{
+                                            //    LdrLog("文件被占用，请关闭文件后再试");
+                                            //    MessageBox.Show("文件被占用，请关闭文件后再试");
+                                            //    continue;
+                                            //}
+
+                                            CSVFile.AddNewLine(path,
+                                                new[]
+                                                {
+                                                    DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                                    LastUser[machineIndex].Name, Global.MachineID,
+                                                    PLCManager.Count[machineIndex].ToString()
+                                                });
+                                            LdrLog("保存csv成功，文件位置：" + path);
+                                            LastUser[machineIndex] = user;
+                                            ReadCsvRefresh(path, machineIndex);
+                                        }
+
+                                        //只要扫到有人员就给信号
+                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + machineIndex, new[] { 1 });
+                                        Thread.Sleep(300);
+                                        PLCManager.XinjiePLC.ModbusWrite(1, 15, 100 + machineIndex, new[] { 1 });
                                     }
                                     else
                                     {
-                                        if (!Directory.Exists(Global.SavePath + machineName))
+                                        var res = MessageBox.Show("未查询到人员信息，卡号：" + strTmp + "\r\n" + "是否录入人员", "提示！",
+                                            MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.None,
+                                            MessageBoxOptions.DefaultDesktopOnly);
+                                        if (res == MessageBoxResult.Yes)
                                         {
-                                            Directory.CreateDirectory(Global.SavePath + machineName);
-                                        }
-                                        string path = Global.SavePath + machineName + $"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
-                                        if (!File.Exists(path))
-                                        {
-                                            CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
-                                        }
-                                        //判断文件是否打开
-                                        if (IsFileInUse(path))
-                                        {
-                                            LdrLog("文件被占用，请关闭文件后再试");
-                                            MessageBox.Show("文件被占用，请关闭文件后再试");
-                                            continue;
-                                        }
-                                        CSVFile.AddNewLine(path,
-                                            new[]
+                                            //让用户输入字符
+                                            var name = Microsoft.VisualBasic.Interaction.InputBox($"请输入卡号为{strTmp}的姓名",
+                                                "录入人员", "", -1, -1);
+                                            if (!string.IsNullOrEmpty(name))
                                             {
-                                                DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                LastUser.Name, Global.MachineID, PLCManager.Count[machineIndex].ToString()
-                                            });
-                                        LdrLog("保存csv成功，文件位置：" + path);
-                                        LastUser = user;
-                                        ReadCsvRefresh(path, machineIndex);
+                                                //保存到csv文件
+                                                string path = AppDomain.CurrentDomain.BaseDirectory + "user.csv";
+                                                //判断是否有重名
+                                                var isExist =
+                                                    MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == name);
+                                                if (isExist != null)
+                                                {
+                                                    MessageBox.Show("已存在该人员，请重新录入");
+                                                    continue;
+                                                }
+
+                                                CSVFile.AddNewLine(path, new[] { strTmp, name });
+                                                Application.Current.Dispatcher.Invoke(() =>
+                                                {
+                                                    MainWindowViewModel.AllUser.Add(new User()
+                                                    { ID = strTmp, Name = name });
+                                                });
+                                                LdrLog($"添加人员{name},卡号{strTmp},如需保存产量，请重新刷卡，否则无效！");
+                                            }
+                                        }
                                     }
 
-                                    //只要扫到有人员就给信号
-                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + machineIndex, new[] { 1 });
-                                    Thread.Sleep(300);
-                                    PLCManager.XinjiePLC.ModbusWrite(1, 15, 100 + machineIndex, new[] { 1 });
-                                }
-                                else
-                                {
-                                    var res = MessageBox.Show("未查询到人员信息，卡号：" + strTmp + "\r\n" + "是否录入人员", "提示！", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.None, MessageBoxOptions.DefaultDesktopOnly);
-                                    if (res == MessageBoxResult.Yes)
-                                    {
-                                        //让用户输入字符
-                                        var name = Microsoft.VisualBasic.Interaction.InputBox($"请输入卡号为{strTmp}的姓名", "录入人员", "", -1, -1);
-                                        if (!string.IsNullOrEmpty(name))
-                                        {
-                                            //保存到csv文件
-                                            string path = AppDomain.CurrentDomain.BaseDirectory + "user.csv";
-                                            //判断是否有重名
-                                            var isExist = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == name);
-                                            if (isExist != null)
-                                            {
-                                                MessageBox.Show("已存在该人员，请重新录入");
-                                                continue;
-                                            }
-                                            CSVFile.AddNewLine(path, new[] { strTmp, name });
-                                            Application.Current.Dispatcher.Invoke(() =>
-                                            {
-                                                MainWindowViewModel.AllUser.Add(new User() { ID = strTmp, Name = name });
-                                            });
-                                            LdrLog($"添加人员{name},卡号{strTmp},如需保存产量，请重新刷卡，否则无效！");
-                                        }
-                                    }
+                                    Thread.Sleep(2000); //扫到等2秒
                                 }
                             }
+                            Thread.Sleep(100); //轮询100ms
                         }
-                        Thread.Sleep(1000);
                     }
                     catch (Exception e)
                     {
@@ -310,7 +342,8 @@ namespace NFCDemo
                 return true;
             }
         }
-        CReader reader = new CReader();
+
+        private CReader[] reader = new CReader[20];
         string LogHeader = " -> ";
         object LogLock = new object();
         int LogLine = 0;

@@ -18,14 +18,24 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal">
-            <TextBlock Text="开始时间" />
-            <DatePicker x:Name="StartTime" />
-            <TextBlock Text="结束时间" />
-            <DatePicker x:Name="EndTime" />
-
+            <TextBlock
+                Margin="10"
+                VerticalAlignment="Center"
+                Text="开始时间:" />
+            <DatePicker x:Name="StartTime" VerticalAlignment="Center" />
+            <TextBlock
+                Margin="20,10,10,10"
+                VerticalAlignment="Center"
+                Text="结束时间:" />
+            <DatePicker x:Name="EndTime" VerticalAlignment="Center" />
+            <TextBlock
+                Margin="10"
+                VerticalAlignment="Center"
+                Text="机台编号:" />
             <ComboBox
                 x:Name="ComboBox"
                 MinWidth="100"
+                VerticalContentAlignment="Center"
                 ItemsSource="{Binding DisplayCollection}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>

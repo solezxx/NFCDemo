@@ -103,7 +103,7 @@
                                                 <TextBlock.Text>
                                                     <MultiBinding StringFormat="{}{0}-当前产量 : {1}">
                                                         <Binding Path="MachineName" />
-                                                        <Binding Mode="TwoWay" Path="MachineCount" />
+                                                        <Binding Path="MachineCount" />
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>

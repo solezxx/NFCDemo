@@ -13,5 +13,20 @@ namespace NFCDemo
     /// </summary>
     public partial class App : Application
     {
+        //防止打开两个
+        private static System.Threading.Mutex mutex;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            bool ret;
+            mutex = new System.Threading.Mutex(true, "NFCDemo", out ret);
+           
+            if (!ret)
+            {
+                MessageBox.Show("程序已经在运行中...");
+                Environment.Exit(0);
+            }
+            base.OnStartup(e);
+        }
     }
 }
