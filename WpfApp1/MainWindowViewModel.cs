@@ -174,6 +174,14 @@ namespace NFCDemo
     {
         public string Name { get; set; }
         public string COM { get; set; }
+        /// <summary>
+        /// 单pcs耗时，单位秒
+        /// </summary>
+        public double CT { get; set; }
+        /// <summary>
+        /// 是否启用
+        /// </summary>
+        public bool Open { get; set; }
     }
 
     public class DisplayData : ViewModelBase

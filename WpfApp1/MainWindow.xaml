@@ -39,10 +39,28 @@
                     Width="70"
                     Height="30"
                     Click="Search_Btn_Click"
-                    Content="查询产量" />
+                    Content="查询产量"
+                    Visibility="Collapsed" />
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <ScrollViewer
+                    x:Name="Scroll"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    PanningMode="Both">
+                    <TextBox
+                        x:Name="TextBox"
+                        Height="30"
+                        MinWidth="500"
+                        IsReadOnly="True"
+                        KeyDown="TextBox_KeyDown"
+                        SelectionChanged="TextBox_SelectionChanged"
+                        SizeChanged="TextBox_SizeChanged"
+                        Style="{x:Null}"
+                        TextChanged="TextBox_OnTextChanged"
+                        TextWrapping="Wrap" />
+                </ScrollViewer>
                 <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -132,25 +150,6 @@
                     </ItemsControl>
                 </ScrollViewer>
             </Grid>
-            <GroupBox
-                Grid.Column="1"
-                Width="200"
-                Margin="5"
-                Foreground="#DCE0E4"
-                Header="日志"
-                Style="{x:Null}">
-                <ScrollViewer x:Name="Scroll" PanningMode="Both">
-                    <TextBox
-                        x:Name="TextBox"
-                        IsReadOnly="True"
-                        KeyDown="TextBox_KeyDown"
-                        SelectionChanged="TextBox_SelectionChanged"
-                        SizeChanged="TextBox_SizeChanged"
-                        Style="{x:Null}"
-                        TextChanged="TextBox_OnTextChanged"
-                        TextWrapping="Wrap" />
-                </ScrollViewer>
-            </GroupBox>
         </Grid>
     </Grid>
 </Window>

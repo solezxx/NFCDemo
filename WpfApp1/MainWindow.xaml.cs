@@ -173,6 +173,8 @@ namespace NFCDemo
             }
         }
         object lockObj = new object();
+
+        private bool[] isRead = new bool[20];
         private async void ReadNfc(int machineIndex)
         {
             var machineName = MainWindowViewModel.MachineDatas[machineIndex].Name;
@@ -191,23 +193,22 @@ namespace NFCDemo
                                 byte[] snr = new byte[128];
                                 byte mode, blkStart, blkNum = 0;
                                 int deviceAddr = CPublic.HexStringToInt("00"); //获得设备地址
-                                if (deviceAddr < 0 || deviceAddr > 255)
-                                {
-                                    LdrLog("Device address must between 0X00-0XFF!");
-                                    continue;
-                                }
-
+                                
                                 mode = (byte)0;
                                 blkNum = (byte)1;
                                 blkStart = (byte)0;
                                 strTmp = CPublic.StrToHexStr("FF FF FF FF FF FF");
                                 snr = CPublic.CharToByte(strTmp); //获得卡号
 
-                                int ret = reader[machineIndex].MF_Read(deviceAddr, mode, blkStart, blkNum, ref snr[0],
-                                    ref buf[0]);
+                                int ret = reader[machineIndex].MF_Read(deviceAddr, mode, blkStart, blkNum, ref snr[0], ref buf[0]);
 
-                                if (0 == ret)
+                                if (0 == ret )
                                 {
+                                    if (isRead[machineIndex] != false)
+                                    {
+                                        continue;
+                                    }
+                                    isRead[machineIndex] = true;
                                     reader[machineIndex].ControlBuzzer(deviceAddr, (byte)10, (byte)1, ref buf[0]);
                                     strTmp = "";
                                     int count = 0;
@@ -312,11 +313,13 @@ namespace NFCDemo
                                             }
                                         }
                                     }
-
-                                    Thread.Sleep(2000); //扫到等2秒
+                                }
+                                else
+                                {
+                                    isRead[machineIndex] = false;
                                 }
                             }
-                            Thread.Sleep(100); //轮询100ms
+                            Thread.Sleep(10); //轮询10ms
                         }
                     }
                     catch (Exception e)

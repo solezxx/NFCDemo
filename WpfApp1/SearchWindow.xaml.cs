@@ -100,8 +100,6 @@ namespace NFCDemo
                 {
                     CSVFile.AddNewLine(csvPath, new[] { DateTime.Now.ToString("yyyy-MM-dd"), localStatistic.MachineId, localStatistic.UserName, localStatistic.UserCount.ToString() });
                 }
-
-                MessageBox.Show($"查询结果保存到{Dirpath}");
             }
             catch (Exception ex)
             {

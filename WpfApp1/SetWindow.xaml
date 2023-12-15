@@ -35,6 +35,10 @@
                     RowHeaderWidth="0"
                     SelectionMode="Single">
                     <DataGrid.Columns>
+                        <DataGridCheckBoxColumn
+                            Width="50"
+                            Binding="{Binding Open}"
+                            Header="启用" />
                         <DataGridTextColumn
                             Width="100"
                             Binding="{Binding Name}"
@@ -43,6 +47,10 @@
                             Width="100"
                             Binding="{Binding COM}"
                             Header="读卡器COM口" />
+                        <DataGridTextColumn
+                            Width="100"
+                            Binding="{Binding CT}"
+                            Header="CT[秒]" />
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel
