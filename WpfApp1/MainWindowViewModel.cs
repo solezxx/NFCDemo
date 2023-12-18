@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using DXH.ViewModel;
@@ -43,54 +44,12 @@ namespace NFCDemo
                     }
                 }
             }
-
-            for (int i = 0; i < MachineDatas.Count; i++)
-            {
-                if (DisplayCollection.Count <= i)
-                {
-                    DisplayCollection.Add(new DisplayData() { MachineName = MachineDatas[i].Name, Statistics = new ObservableCollection<LocalStatistic>() });
-                }
-                else
-                {
-                    DisplayCollection[i].MachineName = MachineDatas[i].Name;
-                }
-                path = Global.SavePath + $"{MachineDatas[i].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
-                if (File.Exists(path))
-                {
-                    var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
-                    if (newAllLines != null)
-                    {
-                        newAllLines.RemoveAt(0);
-
-                        foreach (var line in newAllLines)
-                        {
-                            var items = line.Split(',');
-                            var name = items[2];
-                            var count1 = int.Parse(items[4]);
-                            var yield = DisplayCollection[i].Statistics.FirstOrDefault(x => x.UserName == name);
-                            if (yield == null)
-                            {
-                                DisplayCollection[i].Statistics.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
-                            }
-                            else
-                            {
-                                yield.UserCount += count1;
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         private void PLCManager_PLCCountChanged(object sender, EventArgs e)
         {
-            for (int i = 0; i < DisplayCollection.Count; i++)
-
-            {
-                DisplayCollection[i].MachineCount = PLCManager.Count[i];
-            }
+            
         }
-
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
         {
             if (!Equals(field, newValue))
@@ -104,10 +63,14 @@ namespace NFCDemo
         }
 
         public static ObservableCollection<User> AllUser { get; set; } = new ObservableCollection<User>();
-        public static ObservableCollection<DisplayData> DisplayCollection { get; set; } = new ObservableCollection<DisplayData>();
-        public static ObservableCollection<LocalStatistic> SearchList { get; set; } = new ObservableCollection<LocalStatistic>();
         public static ObservableCollection<MachineData> MachineDatas { get; set; } = new ObservableCollection<MachineData>();
+        public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }=new ObservableCollection<ProductionRecord>();
 
+        public static CancellationTokenSource cts = new CancellationTokenSource();
+        public static void Cancel()
+        {
+            cts.Cancel();
+        }
 
         public string TimeOut
         {
@@ -124,49 +87,6 @@ namespace NFCDemo
         public string Name { get; set; }
         public string ID { get; set; }
     }
-
-    /// <summary>
-    /// 产量统计
-    /// </summary>
-    public class LocalStatistic:ViewModelBase
-    {
-        private string _userName;
-
-        public string UserName
-        {
-            get { return _userName; }
-            set
-            {
-                _userName = value;
-                OnPropertyChanged(nameof(UserName));
-            }
-        }
-
-        private string _machineId;
-
-        public string MachineId
-        {
-            get { return _machineId; }
-            set
-            {
-                _machineId = value; 
-                OnPropertyChanged(nameof(MachineId));
-            }
-        }
-
-        private int _userCount;
-
-        public int UserCount
-        {
-            get { return _userCount; }
-            set
-            {
-                _userCount = value;
-                OnPropertyChanged(nameof(UserCount));
-            }
-        }
-    }
-
     /// <summary>
     /// 机台信息
     /// </summary>
@@ -184,31 +104,41 @@ namespace NFCDemo
         public bool Open { get; set; }
     }
 
-    public class DisplayData : ViewModelBase
+    public class ProductionRecord
     {
-        private string _machineName;
-
-        public string MachineName
-        {
-            get { return _machineName; }
-            set
-            {
-                _machineName = value;
-                OnPropertyChanged(nameof(MachineName));
-            }
-        }
-
-        private int _machineCount;
-
-        public int MachineCount
-        {
-            get { return _machineCount; }
-            set
-            {
-                _machineCount = value;
-                OnPropertyChanged(nameof(MachineCount));
-            }
-        }
-        public ObservableCollection<LocalStatistic> Statistics { get ; set; }
+        public string EmployeeName { get; set; }
+        public string MachineName { get; set; }
+        //生成30天的数据
+        public double day1 { get; set; }
+        public double day2 { get; set; }
+        public double day3 { get; set; }
+        public double day4 { get; set; }
+        public double day5 { get; set; }
+        public double day6 { get; set; }
+        public double day7 { get; set; }
+        public double day8 { get; set; }
+        public double day9 { get; set; }
+        public double day10 { get; set; }
+        public double day11 { get; set; }
+        public double day12 { get; set; }
+        public double day13 { get; set; }
+        public double day14 { get; set; }
+        public double day15 { get; set; }
+        public double day16 { get; set; }
+        public double day17 { get; set; }
+        public double day18 { get; set; }
+        public double day19 { get; set; }
+        public double day20 { get; set; }
+        public double day21 { get; set; }
+        public double day22 { get; set; }
+        public double day23 { get; set; }
+        public double day24 { get; set; }
+        public double day25 { get; set; }
+        public double day26 { get; set; }
+        public double day27 { get; set; }
+        public double day28 { get; set; }
+        public double day29 { get; set; }
+        public double day30 { get; set;}
+        public double day31 { get; set;}
     }
 }

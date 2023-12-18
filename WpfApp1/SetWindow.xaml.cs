@@ -23,8 +23,10 @@ namespace NFCDemo
         public SetWindow()
         {
             InitializeComponent();
+            _mainWindow= Application.Current.MainWindow as MainWindow;
         }
 
+        private MainWindow _mainWindow;
         private void Save_Btn_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -34,11 +36,18 @@ namespace NFCDemo
                 {
                     list.Add(int.Parse(Global.TimeOut) * 10);
                 }
-                PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, list.ToArray());
+
+                if (PLCManager.XinjiePLC.ModbusState)
+                {
+                    PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, list.ToArray());
+                }
+               
                 //保存到json文件
                 string json = JsonConvert.SerializeObject(MainWindowViewModel.MachineDatas);
                 System.IO.File.WriteAllText("MachineData.json", json);
                 MessageBox.Show("保存成功！");
+                MainWindowViewModel.Cancel();
+                _mainWindow.Init();
             }
             catch (Exception exception)
             {
@@ -64,7 +73,6 @@ namespace NFCDemo
             {
                 MainWindowViewModel.MachineDatas.RemoveAt(DataGrid.SelectedIndex);
             }
-        
         }
     }
 }

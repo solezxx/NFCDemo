@@ -35,12 +35,6 @@
                     Click="Set_Btn_Click"
                     Content="参数设置"
                     Visibility="Collapsed" />
-                <Button
-                    Width="70"
-                    Height="30"
-                    Click="Search_Btn_Click"
-                    Content="查询产量"
-                    Visibility="Collapsed" />
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
@@ -93,62 +87,17 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0">
-                <ScrollViewer>
-                    <ItemsControl
-                        BorderThickness="1"
-                        ItemsSource="{Binding DisplayCollection}"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="5">
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock
-                                                Margin="0,0,0,5"
-                                                Background="Black"
-                                                FontSize="20"
-                                                Foreground="White">
-                                                <TextBlock.Text>
-                                                    <MultiBinding StringFormat="{}{0}-当前产量 : {1}">
-                                                        <Binding Path="MachineName" />
-                                                        <Binding Path="MachineCount" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
-                                            </TextBlock>
-                                        </StackPanel>
-                                        <ListView
-                                            Grid.Column="0"
-                                            FontSize="20"
-                                            ItemsSource="{Binding Statistics}">
-                                            <ListView.View>
-                                                <GridView>
-                                                    <GridViewColumn
-                                                        Width="100"
-                                                        DisplayMemberBinding="{Binding UserName}"
-                                                        Header="姓名" />
-                                                    <GridViewColumn
-                                                        Width="100"
-                                                        DisplayMemberBinding="{Binding UserCount}"
-                                                        Header="今日产量" />
-                                                </GridView>
-                                            </ListView.View>
-                                        </ListView>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <DataGrid
+                    x:Name="DataGrid"
+                    AlternatingRowBackground="LightGray"
+                    CanUserAddRows="False"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding ProductionRecords}" />
             </Grid>
         </Grid>
     </Grid>

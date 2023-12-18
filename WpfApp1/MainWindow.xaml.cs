@@ -33,10 +33,81 @@ namespace NFCDemo
             PLCManager.Initialize();
             PLCManager.XinjiePLC.ModbusStateChanged += Modbus_ConnectStateChanged;
             PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
+            Init();
+        }
+        public void Init()
+        {
             for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
             {
-                reader[i] = new CReader();
-                OpenCom(i);
+                if (MainWindowViewModel.MachineDatas[i].Open)
+                {
+                    reader[i] = new CReader();
+                    OpenCom(i);
+                }
+            }
+
+            try
+            {
+                MainWindowViewModel.ProductionRecords.Clear();
+                //查找路径下的文件夹的数量
+                var dirs = Directory.GetDirectories(Global.SavePath);
+                for (int i = 0; i < dirs.Length; i++)
+                {
+                    var files = Directory.GetFiles(dirs[i], "*.csv");
+                    for (int j = 0; j < files.Length; j++)
+                    {
+                        var fileName = System.IO.Path.GetFileNameWithoutExtension(files[j]);
+                        var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
+
+                        if (fileDateTime.Month == DateTime.Now.Month)
+                        {
+                            var day = fileDateTime.Day;
+                            var allLines = File.ReadAllLines(files[j], Encoding.GetEncoding("GB2312")).ToList();
+                            allLines.RemoveAt(0);
+                            foreach (var line in allLines)
+                            {
+                                var items = line.Split(',');
+                                var name = items[2];
+                                var machineName = items[3];
+                                var count1 = double.Parse(items[4]);
+                                var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.MachineName == machineName));
+                                if (yield == null)
+                                {
+                                    MainWindowViewModel.ProductionRecords.Add(new ProductionRecord() { EmployeeName = name, MachineName = machineName });
+                                    //找到属性名为day+count1的属性并赋值
+                                    var property = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType().GetProperty("day" + day);
+                                    property.SetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName), count1);
+                                }
+                                else
+                                {
+                                    var property = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType().GetProperty("day" + day);
+                                    var value = (double)property.GetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName));
+                                    property.SetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName), value + count1);
+                                }
+                            }
+                        }
+                    }
+                }
+                //最后一行统计时间
+                var lastLine = new ProductionRecord() { EmployeeName = "当日时间", MachineName = "合计" };
+                for (int i = 1; i <= DateTime.Now.Day; i++)
+                {
+                    var property = lastLine.GetType().GetProperty("day" + i);
+                    double value = 0;
+                    //数量*MachineData的CT
+                    foreach (var productionRecord in MainWindowViewModel.ProductionRecords)
+                    {
+                        var property1 = productionRecord.GetType().GetProperty("day" + i);
+                        var value1 = (double)property1.GetValue(productionRecord);
+                        value += value1 * MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == productionRecord.MachineName).CT;
+                    }
+                    property.SetValue(lastLine, value);
+                }
+                MainWindowViewModel.ProductionRecords.Add(lastLine);
+            }
+            catch (Exception e)
+            {
+               LdrLog(e.Message);
             }
         }
 
@@ -75,7 +146,7 @@ namespace NFCDemo
                     });
                 LdrLog("保存csv成功，文件位置：" + path);
                 LastUser[e] = null;
-                ReadCsvRefresh(path, e);
+
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
             }
             catch (Exception exception)
@@ -83,44 +154,7 @@ namespace NFCDemo
                 MessageBox.Show(exception.Message);
             }
         }
-        /// <summary>
-        /// 读取csv文件，刷新界面统计产量
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="e"></param>
-        public async void ReadCsvRefresh(string path, int e)
-        {
-            await Task.Run((() =>
-            {
-                var newList = new List<LocalStatistic>();
-                var newAllLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
-                newAllLines.RemoveAt(0);
 
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (var line in newAllLines)
-                    {
-                        var items = line.Split(',');
-                        var name = items[2];
-                        var count1 = int.Parse(items[4]);
-                        var yield = newList.FirstOrDefault(x => x.UserName == name);
-                        if (yield == null)
-                        {
-                            newList.Add(new LocalStatistic() { UserName = name, UserCount = count1 });
-                        }
-                        else
-                        {
-                            yield.UserCount += count1;
-                        }
-                    }
-                    MainWindowViewModel.DisplayCollection[e].Statistics.Clear();
-                    foreach (var item in newList)
-                    {
-                        MainWindowViewModel.DisplayCollection[e].Statistics.Add(item);
-                    }
-                });
-            }));
-        }
         private void Modbus_ConnectStateChanged(object sender, bool e)
         {
             Dispatcher.BeginInvoke(new Action((() =>
@@ -139,7 +173,6 @@ namespace NFCDemo
 
         UserManager userManager;
         SetWindow setWindow;
-        SearchWindow searchWindow;
         MainWindowViewModel viewModel;
 
         User[] LastUser = new User[20];
@@ -186,6 +219,10 @@ namespace NFCDemo
                     {
                         lock (lockObj)
                         {
+                            if (MainWindowViewModel.cts.Token.IsCancellationRequested)
+                            {
+                                MainWindowViewModel.cts.Token.ThrowIfCancellationRequested();
+                            }
                             if (IntPtr.Zero != reader[machineIndex].GetHComm()) //判断串口是否打开
                             {
                                 string strTmp = "\r\n ";
@@ -193,7 +230,7 @@ namespace NFCDemo
                                 byte[] snr = new byte[128];
                                 byte mode, blkStart, blkNum = 0;
                                 int deviceAddr = CPublic.HexStringToInt("00"); //获得设备地址
-                                
+
                                 mode = (byte)0;
                                 blkNum = (byte)1;
                                 blkStart = (byte)0;
@@ -202,7 +239,7 @@ namespace NFCDemo
 
                                 int ret = reader[machineIndex].MF_Read(deviceAddr, mode, blkStart, blkNum, ref snr[0], ref buf[0]);
 
-                                if (0 == ret )
+                                if (0 == ret)
                                 {
                                     if (isRead[machineIndex] != false)
                                     {
@@ -272,7 +309,7 @@ namespace NFCDemo
                                                 });
                                             LdrLog("保存csv成功，文件位置：" + path);
                                             LastUser[machineIndex] = user;
-                                            ReadCsvRefresh(path, machineIndex);
+
                                         }
 
                                         //只要扫到有人员就给信号
@@ -324,10 +361,17 @@ namespace NFCDemo
                     }
                     catch (Exception e)
                     {
-                        LdrLog(e.Message);
+                        if (e is OperationCanceledException)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            LdrLog(e.Message);
+                        }
                     }
                 }
-            }));
+            }), MainWindowViewModel.cts.Token);
         }
         static bool IsFileInUse(string filePath)
         {
@@ -416,12 +460,6 @@ namespace NFCDemo
         {
             setWindow = new SetWindow();
             setWindow.ShowDialog();
-        }
-
-        private void Search_Btn_Click(object sender, RoutedEventArgs e)
-        {
-            searchWindow = new SearchWindow();
-            searchWindow.ShowDialog();
         }
 
         private int keycount = 0;
