@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:NFCDemo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="MainWindow"
+    Title="刷卡统计2023.12.19"
     Width="800"
     Height="450"
     WindowStartupLocation="CenterOwner"
@@ -34,6 +34,11 @@
                     Height="30"
                     Click="Set_Btn_Click"
                     Content="参数设置"
+                    Visibility="Collapsed" />
+                <Button
+                    Width="50"
+                    Click="test_click"
+                    Content="测试"
                     Visibility="Collapsed" />
             </StackPanel>
 
@@ -87,18 +92,22 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
+            <ScrollViewer Grid.Row="0">
                 <DataGrid
                     x:Name="DataGrid"
                     AlternatingRowBackground="LightGray"
+                    AutoGenerateColumns="False"
                     CanUserAddRows="False"
+                    CanUserReorderColumns="False"
+                    CanUserSortColumns="False"
+                    FontSize="20"
                     IsReadOnly="True"
-                    ItemsSource="{Binding ProductionRecords}" />
-            </Grid>
+                    ItemsSource="{Binding ProductionRecords}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding Date}" Header="日期" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </Window>

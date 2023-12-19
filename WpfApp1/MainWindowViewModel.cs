@@ -44,11 +44,12 @@ namespace NFCDemo
                     }
                 }
             }
+            ProductionRecords = new ObservableCollection<ProductionRecord>();
         }
 
         private void PLCManager_PLCCountChanged(object sender, EventArgs e)
         {
-            
+
         }
         protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
         {
@@ -64,7 +65,7 @@ namespace NFCDemo
 
         public static ObservableCollection<User> AllUser { get; set; } = new ObservableCollection<User>();
         public static ObservableCollection<MachineData> MachineDatas { get; set; } = new ObservableCollection<MachineData>();
-        public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }=new ObservableCollection<ProductionRecord>();
+        public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }
 
         public static CancellationTokenSource cts = new CancellationTokenSource();
         public static void Cancel()
@@ -104,41 +105,67 @@ namespace NFCDemo
         public bool Open { get; set; }
     }
 
-    public class ProductionRecord
+    public class ProductionRecord : ViewModelBase
     {
-        public string EmployeeName { get; set; }
-        public string MachineName { get; set; }
-        //生成30天的数据
-        public double day1 { get; set; }
-        public double day2 { get; set; }
-        public double day3 { get; set; }
-        public double day4 { get; set; }
-        public double day5 { get; set; }
-        public double day6 { get; set; }
-        public double day7 { get; set; }
-        public double day8 { get; set; }
-        public double day9 { get; set; }
-        public double day10 { get; set; }
-        public double day11 { get; set; }
-        public double day12 { get; set; }
-        public double day13 { get; set; }
-        public double day14 { get; set; }
-        public double day15 { get; set; }
-        public double day16 { get; set; }
-        public double day17 { get; set; }
-        public double day18 { get; set; }
-        public double day19 { get; set; }
-        public double day20 { get; set; }
-        public double day21 { get; set; }
-        public double day22 { get; set; }
-        public double day23 { get; set; }
-        public double day24 { get; set; }
-        public double day25 { get; set; }
-        public double day26 { get; set; }
-        public double day27 { get; set; }
-        public double day28 { get; set; }
-        public double day29 { get; set; }
-        public double day30 { get; set;}
-        public double day31 { get; set;}
+        public ProductionRecord()
+        {
+            _machineCount = new string[MainWindowViewModel.MachineDatas.Count];
+        }
+        private string _employeeName;
+
+        /// <summary>
+        /// 员工姓名
+        /// </summary>
+        public string EmployeeName
+        {
+            get { return _employeeName; }
+            set
+            {
+                _employeeName = value;
+                OnPropertyChanged(nameof(EmployeeName));
+            }
+        }
+
+        private string[] _machineCount;
+
+        public string[] MachineCount
+        {
+            get { return _machineCount; }
+            set
+            {
+                _machineCount = value;
+                OnPropertyChanged(nameof(_machineCount));
+            }
+        }
+
+        private string _date;
+
+        /// <summary>
+        /// 日期
+        /// </summary>
+        public string Date
+        {
+            get { return _date; }
+            set
+            {
+                _date = value;
+                OnPropertyChanged(nameof(Date));
+            }
+        }
+
+        private double _duration;
+
+        /// <summary>
+        /// 统计时长，单位小时
+        /// </summary>
+        public double Duration
+        {
+            get { return _duration; }
+            set
+            {
+                _duration = value;
+                OnPropertyChanged(nameof(Duration));
+            }
+        }
     }
 }
