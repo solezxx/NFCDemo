@@ -49,69 +49,6 @@ namespace NFCDemo
             }
             ColumnIni();
             FirstStartReadCsv();
-            //try
-            //{
-            //    MainWindowViewModel.ProductionRecords.Clear();
-            //    //查找路径下的文件夹的数量
-            //    var dirs = Directory.GetDirectories(Global.SavePath);
-            //    for (int i = 0; i < dirs.Length; i++)
-            //    {
-            //        var files = Directory.GetFiles(dirs[i], "*.csv");
-            //        for (int j = 0; j < files.Length; j++)
-            //        {
-            //            var fileName = System.IO.Path.GetFileNameWithoutExtension(files[j]);
-            //            var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
-
-            //            if (fileDateTime.Month == DateTime.Now.Month)
-            //            {
-            //                var day = fileDateTime.Day;
-            //                var allLines = File.ReadAllLines(files[j], Encoding.GetEncoding("GB2312")).ToList();
-            //                allLines.RemoveAt(0);
-            //                foreach (var line in allLines)
-            //                {
-            //                    var items = line.Split(',');
-            //                    var name = items[2];
-            //                    var machineName = items[3];
-            //                    var count1 = double.Parse(items[4]);
-            //                    var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.MachineName == machineName));
-            //                    if (yield == null)
-            //                    {
-            //                        MainWindowViewModel.ProductionRecords.Add(new ProductionRecord() { EmployeeName = name, MachineName = machineName });
-            //                        //找到属性名为day+count1的属性并赋值
-            //                        var property = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType().GetProperty("day" + day);
-            //                        property.SetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName), count1);
-            //                    }
-            //                    else
-            //                    {
-            //                        var property = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType().GetProperty("day" + day);
-            //                        var value = (double)property.GetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName));
-            //                        property.SetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName), value + count1);
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //    //最后一行统计时间
-            //    var lastLine = new ProductionRecord() { EmployeeName = "当日工时", MachineName = "合计" };
-            //    for (int i = 1; i <= DateTime.Now.Day; i++)
-            //    {
-            //        var property = lastLine.GetType().GetProperty("day" + i);
-            //        double value = 0;
-            //        //数量*MachineData的CT
-            //        foreach (var productionRecord in MainWindowViewModel.ProductionRecords)
-            //        {
-            //            var property1 = productionRecord.GetType().GetProperty("day" + i);
-            //            var value1 = (double)property1.GetValue(productionRecord);
-            //            value += Math.Round((value1 * MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == productionRecord.MachineName).CT) / 3600, 2);
-            //        }
-            //        property.SetValue(lastLine, value);
-            //    }
-            //    MainWindowViewModel.ProductionRecords.Add(lastLine);
-            //}
-            //catch (Exception e)
-            //{
-            //    LdrLog(e.Message);
-            //}
         }
 
         public void FirstStartReadCsv()
@@ -123,25 +60,60 @@ namespace NFCDemo
                 var dirs = Directory.GetDirectories(Global.SavePath);
                 foreach (var dir in dirs)
                 {
-                    var files=Directory.GetFiles(dir, "*.csv");
+                    var files = Directory.GetFiles(dir, "*.csv");
                     foreach (var file in files)
                     {
-                        var allLines = File.ReadAllLines(file, Encoding.GetEncoding("GB2312")).ToList();
-                        allLines.RemoveAt(0);
-                        foreach (var line in allLines)
+                        var fileName = System.IO.Path.GetFileNameWithoutExtension(file);
+                        var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
+                        if (fileDateTime.Month == DateTime.Now.Month)
                         {
-                            var items = line.Split(',');
-                            var name = items[2];
-                            var machineName = items[3];
-                            var count = double.Parse(items[4]);
-
+                            var day = fileDateTime.Day;
+                            var allLines = File.ReadAllLines(file, Encoding.GetEncoding("GB2312")).ToList();
+                            allLines.RemoveAt(0);
+                            foreach (var line in allLines)
+                            {
+                                var items = line.Split(',');
+                                var name = items[2];
+                                var machineName = items[3];
+                                var count = int.Parse(items[4]);
+                                var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.Date == day));
+                                if (yield == null)
+                                {
+                                    int indexMachineData = MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == machineName));
+                                    var temp = new ProductionRecord()
+                                    {
+                                        Date = day,
+                                        MachineCount = new int[MainWindowViewModel.MachineDatas.Count],
+                                        EmployeeName = name,
+                                    };
+                                    temp.MachineCount[indexMachineData] = count;
+                                    double duration = 0;
+                                    for (int i = 0; i < temp.MachineCount.Length; i++)
+                                    {
+                                        duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                    }
+                                    temp.Duration = Math.Round(duration / 3600, 2);
+                                    MainWindowViewModel.ProductionRecords.Add(temp);
+                                }
+                                else
+                                {
+                                    int indexMachineData = MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == machineName));
+                                    yield.MachineCount[indexMachineData] += count;
+                                    double duration = 0;
+                                    for (int i = 0; i < yield.MachineCount.Length; i++)
+                                    {
+                                        duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                    }
+                                    yield.Duration = Math.Round(duration / 3600, 2);
+                                }
+                            }
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-              LdrLog(e.Message);
+                LdrLog(e.Message);
             }
         }
 
@@ -151,48 +123,37 @@ namespace NFCDemo
         public void ColumnIni()
         {
             DataGrid.Columns.Clear();
+            DataGrid.ItemsSource = MainWindowViewModel.ProductionRecords;
             DataGridTextColumn column;
+            column = new DataGridTextColumn()
+            {
+                Header = "日期",
+                Binding = new Binding("Date")
+            };
+            DataGrid.Columns.Add(column);
             foreach (var machineData in MainWindowViewModel.MachineDatas)
             {
                 var index = MainWindowViewModel.MachineDatas.IndexOf(machineData);
                 column = new DataGridTextColumn()
                 {
                     Header = machineData.Name,
-                    Binding = new Binding($"{MainWindowViewModel.ProductionRecords[index].}")
+                    Binding = new Binding($"MachineCount[{index}]")
                 };
                 DataGrid.Columns.Add(column);
             }
             column = new DataGridTextColumn()
             {
                 Header = "合计(小时)",
-                //Binding = new Binding($"{}")
+                Binding = new Binding("Duration")
             };
             DataGrid.Columns.Add(column);
 
             column = new DataGridTextColumn()
             {
-                Header = "员工"
+                Header = "员工",
+                Binding = new Binding("EmployeeName")
             };
             DataGrid.Columns.Add(column);
-        }
-        private void SetLastRowColor()
-        {
-            if (DataGrid.Items.Count > 0)
-            {
-                var lastRowIndex = DataGrid.Items.Count - 1;
-
-                for (int columnIndex = 0; columnIndex < DataGrid.Columns.Count; columnIndex++)
-                {
-                    var cell = GetCell(DataGrid, lastRowIndex, columnIndex);
-
-                    if (cell != null)
-                    {
-                        // 设置单元格的背景色和前景色
-                        cell.Background = Brushes.LightGreen;
-                        cell.Foreground = Brushes.Black;
-                    }
-                }
-            }
         }
 
         // 获取 DataGrid 的单元格
@@ -283,13 +244,18 @@ namespace NFCDemo
                     PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
                     return;
                 }
-                CSVFile.AddNewLine(path,
-                    new[]
-                    {
-                    DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                    LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
-                    });
-                LdrLog("保存csv成功，文件位置：" + path);
+
+                if (PLCManager.Count[e]!=0)//产量为0不保存也不刷新
+                {
+                    CSVFile.AddNewLine(path,
+                        new[]
+                        {
+                            DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                            LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
+                        });
+                    ReadCsvAndRefresh(path);
+                }
+                LdrLog($"{LastUser[e]}自动下机");
                 LastUser[e] = null;
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
             }
@@ -299,69 +265,61 @@ namespace NFCDemo
             }
         }
 
-        //public void ReadCsvAndRefresh(int index, string path)
-        //{
-        //    try
-        //    {
-        //        App.Current.Dispatcher.BeginInvoke(new Action(() =>
-        //        {
-        //            //先删除最后一行
-        //            MainWindowViewModel.ProductionRecords.RemoveAt(MainWindowViewModel.ProductionRecords.Count - 1);
-        //            var allLines = File.ReadAllLines(path, Encoding.GetEncoding("GB2312")).ToList();
-        //            allLines.RemoveAt(0);
-        //            var line = allLines.Last();
-
-        //            var items = line.Split(',');
-        //            var name = items[2];
-        //            var machineName = items[3];
-        //            var count1 = double.Parse(items[4]);
-        //            var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x =>
-        //                (x.EmployeeName == name && x.MachineName == machineName));
-        //            if (yield == null)
-        //            {
-        //                MainWindowViewModel.ProductionRecords.Add(new ProductionRecord() { EmployeeName = name, MachineName = machineName });
-        //                //找到属性名为day+count1的属性并赋值
-        //                var property = MainWindowViewModel.ProductionRecords
-        //                    .FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType()
-        //                    .GetProperty("day" + index);
-        //                property.SetValue(
-        //                    MainWindowViewModel.ProductionRecords.FirstOrDefault(x =>
-        //                        x.EmployeeName == name && x.MachineName == machineName), count1);
-        //            }
-        //            else
-        //            {
-        //                var property = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName).GetType().GetProperty("day" + index);
-        //                var value = (double)property.GetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName));
-        //                property.SetValue(MainWindowViewModel.ProductionRecords.FirstOrDefault(x => x.EmployeeName == name && x.MachineName == machineName), value + count1);
-        //            }
-
-        //            //最后一行统计时间
-        //            var lastLine = new ProductionRecord() { EmployeeName = "当日工时", MachineName = "合计" };
-        //            for (int i = 1; i <= DateTime.Now.Day; i++)
-        //            {
-        //                var property = lastLine.GetType().GetProperty("day" + i);
-        //                double value = 0;
-        //                //数量*MachineData的CT
-        //                foreach (var productionRecord in MainWindowViewModel.ProductionRecords)
-        //                {
-        //                    var property1 = productionRecord.GetType().GetProperty("day" + i);
-        //                    var value1 = (double)property1.GetValue(productionRecord);
-        //                    value += Math.Round((value1 * MainWindowViewModel.MachineDatas
-        //                        .FirstOrDefault(x => x.Name == productionRecord.MachineName).CT) / 3600, 2);
-        //                }
-
-        //                property.SetValue(lastLine, value);
-        //            }
-        //            //添加最后一行
-        //            MainWindowViewModel.ProductionRecords.Add(lastLine);
-        //            SetLastRowColor();
-        //        }));
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        MessageBox.Show(e.Message);
-        //    }
-        //}
+        public void ReadCsvAndRefresh(string path)
+        {
+            try
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+                    var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
+                    if (fileDateTime.Month == DateTime.Now.Month)
+                    {
+                        var day = fileDateTime.Day;
+                        //获取csv中的最后一行
+                        var lastLine = File.ReadLines(path).Last();
+                        var items = lastLine.Split(',');
+                        var name = items[2];
+                        var machineName = items[3];
+                        var count = int.Parse(items[4]);
+                        var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.Date == day));
+                        if (yield == null)
+                        {
+                            int indexMachineData = MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == machineName));
+                            var temp = new ProductionRecord()
+                            {
+                                Date = day,
+                                MachineCount = new int[MainWindowViewModel.MachineDatas.Count],
+                                EmployeeName = name,
+                            };
+                            temp.MachineCount[indexMachineData] = count;
+                            double duration = 0;
+                            for (int i = 0; i < temp.MachineCount.Length; i++)
+                            {
+                                duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                            }
+                            temp.Duration = duration;
+                            MainWindowViewModel.ProductionRecords.Add(temp);
+                        }
+                        else
+                        {
+                            int indexMachineData = MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == machineName));
+                            yield.MachineCount[indexMachineData] = count;
+                            double duration = 0;
+                            for (int i = 0; i < yield.MachineCount.Length; i++)
+                            {
+                                duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                            }
+                            yield.Duration = duration;
+                        }
+                    }
+                }));
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
 
         private void Modbus_ConnectStateChanged(object sender, bool e)
         {
@@ -470,11 +428,11 @@ namespace NFCDemo
                                     if (user != null)
                                     {
                                         LdrLog($"{machineName}扫到人员：" + user.Name);
-                                        if (LastUser[machineIndex] == null)
+                                        if (LastUser[machineIndex] == null)//如果上一个人结束了
                                         {
                                             LastUser[machineIndex] = user;
                                         }
-                                        else
+                                        else//上一个人没结束
                                         {
                                             if (!Directory.Exists(Global.SavePath + machineName))
                                             {
@@ -495,15 +453,18 @@ namespace NFCDemo
                                             //    MessageBox.Show("文件被占用，请关闭文件后再试");
                                             //    continue;
                                             //}
-
-                                            CSVFile.AddNewLine(path,
-                                                new[]
-                                                {
-                                                    DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                    LastUser[machineIndex].Name, Global.MachineID,
-                                                    PLCManager.Count[machineIndex].ToString()
-                                                });
-                                            LdrLog("保存csv成功，文件位置：" + path);
+                                            if (PLCManager.Count[machineIndex]!=0)
+                                            {
+                                                CSVFile.AddNewLine(path,
+                                                    new[]
+                                                    {
+                                                        DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                                        LastUser[machineIndex].Name, Global.MachineID,
+                                                        PLCManager.Count[machineIndex].ToString()
+                                                    });
+                                                ReadCsvAndRefresh(path);
+                                            }
+                                            LdrLog($"{LastUser[machineIndex]}下机，{user}上机");
                                             LastUser[machineIndex] = user;
                                         }
 
@@ -553,6 +514,7 @@ namespace NFCDemo
                             }
                             else
                             {
+                                //断开重连
                                 int ret = reader[machineIndex].OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[machineIndex].COM.Replace("COM", "")), 9600);
                                 if (0 == ret)
                                 {

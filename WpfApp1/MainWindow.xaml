@@ -92,7 +92,11 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <ScrollViewer Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <ScrollViewer Grid.Row="1">
                 <DataGrid
                     x:Name="DataGrid"
                     AlternatingRowBackground="LightGray"
@@ -101,11 +105,7 @@
                     CanUserReorderColumns="False"
                     CanUserSortColumns="False"
                     FontSize="20"
-                    IsReadOnly="True"
-                    ItemsSource="{Binding ProductionRecords}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Binding="{Binding Date}" Header="日期" />
-                    </DataGrid.Columns>
+                    IsReadOnly="True">
                 </DataGrid>
             </ScrollViewer>
         </Grid>

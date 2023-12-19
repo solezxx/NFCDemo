@@ -44,7 +44,13 @@ namespace NFCDemo
                     }
                 }
             }
-            ProductionRecords = new ObservableCollection<ProductionRecord>();
+
+            //获取MachineDatas的名字并转成list
+            List<string> machineNames = new List<string>();
+            foreach (var machineData in MachineDatas)
+            {
+                machineNames.Add(machineData.Name);
+            }
         }
 
         private void PLCManager_PLCCountChanged(object sender, EventArgs e)
@@ -65,7 +71,7 @@ namespace NFCDemo
 
         public static ObservableCollection<User> AllUser { get; set; } = new ObservableCollection<User>();
         public static ObservableCollection<MachineData> MachineDatas { get; set; } = new ObservableCollection<MachineData>();
-        public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }
+        public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }=new ObservableCollection<ProductionRecord>();
 
         public static CancellationTokenSource cts = new CancellationTokenSource();
         public static void Cancel()
@@ -107,10 +113,6 @@ namespace NFCDemo
 
     public class ProductionRecord : ViewModelBase
     {
-        public ProductionRecord()
-        {
-            _machineCount = new string[MainWindowViewModel.MachineDatas.Count];
-        }
         private string _employeeName;
 
         /// <summary>
@@ -126,24 +128,24 @@ namespace NFCDemo
             }
         }
 
-        private string[] _machineCount;
+        private int[] _machineCount;
 
-        public string[] MachineCount
+        public int[] MachineCount
         {
             get { return _machineCount; }
             set
             {
                 _machineCount = value;
-                OnPropertyChanged(nameof(_machineCount));
+                OnPropertyChanged(nameof(MachineCount));
             }
         }
 
-        private string _date;
+        private int _date;
 
         /// <summary>
         /// 日期
         /// </summary>
-        public string Date
+        public int Date
         {
             get { return _date; }
             set
