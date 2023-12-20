@@ -23,36 +23,43 @@ namespace NFCDemo
         public SetWindow()
         {
             InitializeComponent();
-            _mainWindow= Application.Current.MainWindow as MainWindow;
+            _mainWindow = Application.Current.MainWindow as MainWindow;
         }
 
         private MainWindow _mainWindow;
-        private void Save_Btn_Click(object sender, RoutedEventArgs e)
+        private async void Save_Btn_Click(object sender, RoutedEventArgs e)
         {
-            try
+            await Task.Run((() =>
             {
-                List<int> list = new List<int>();
-                for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+                try
                 {
-                    list.Add(int.Parse(Global.TimeOut) * 10);
-                }
+                    //发送超时时间
+                    List<int> list = new List<int>();
+                    for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+                    {
+                        list.Add((MainWindowViewModel.MachineDatas[i].MT) * 10);
+                    }
 
-                if (PLCManager.XinjiePLC.ModbusState)
-                {
-                    PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, list.ToArray());
+                    if (PLCManager.XinjiePLC.ModbusState)
+                    {
+                        PLCManager.XinjiePLC.ModbusWrite(1, 16, 100, list.ToArray());
+                    }
+
+                    //保存到json文件
+                    string json = JsonConvert.SerializeObject(MainWindowViewModel.MachineDatas);
+                    System.IO.File.WriteAllText("MachineData.json", json);
+                    MainWindowViewModel.Cancel();
+                    MessageBox.Show("保存成功！");
+                    Dispatcher.BeginInvoke(new Action((() =>
+                    {
+                        _mainWindow.Init();
+                    })));
                 }
-               
-                //保存到json文件
-                string json = JsonConvert.SerializeObject(MainWindowViewModel.MachineDatas);
-                System.IO.File.WriteAllText("MachineData.json", json);
-                MessageBox.Show("保存成功！");
-                MainWindowViewModel.Cancel();
-                _mainWindow.Init();
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show("保存失败：" + exception.Message);
-            }
+                catch (Exception exception)
+                {
+                    MessageBox.Show("保存失败：" + exception.Message);
+                }
+            }));
         }
 
         private void Add_click(object sender, RoutedEventArgs e)
@@ -69,7 +76,7 @@ namespace NFCDemo
 
         private void Delete_click(object sender, RoutedEventArgs e)
         {
-            if (MainWindowViewModel.MachineDatas!=null)
+            if (MainWindowViewModel.MachineDatas != null)
             {
                 MainWindowViewModel.MachineDatas.RemoveAt(DataGrid.SelectedIndex);
             }

@@ -14,15 +14,10 @@
     </Window.DataContext>
     <Grid>
         <StackPanel Orientation="Vertical">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="超时自动保存：" />
-                <TextBox Width="100" Text="{Binding TimeOut}" />
-                <TextBlock Text="秒" />
-            </StackPanel>
             <Grid Height="200">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <DataGrid
                     x:Name="DataGrid"
@@ -36,7 +31,7 @@
                     SelectionMode="Single">
                     <DataGrid.Columns>
                         <DataGridCheckBoxColumn
-                            Width="50"
+                            Width="Auto"
                             Binding="{Binding Open}"
                             Header="启用" />
                         <DataGridTextColumn
@@ -51,6 +46,10 @@
                             Width="100"
                             Binding="{Binding CT}"
                             Header="CT[秒]" />
+                        <DataGridTextColumn
+                            Width="100"
+                            Binding="{Binding MT}"
+                            Header="超时下机[秒]" />
                     </DataGrid.Columns>
                 </DataGrid>
                 <StackPanel

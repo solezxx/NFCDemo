@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using DXH.ViewModel;
+using LiveCharts;
 
 namespace NFCDemo
 {
@@ -68,7 +69,6 @@ namespace NFCDemo
 
             return false;
         }
-
         public static ObservableCollection<User> AllUser { get; set; } = new ObservableCollection<User>();
         public static ObservableCollection<MachineData> MachineDatas { get; set; } = new ObservableCollection<MachineData>();
         public static ObservableCollection<ProductionRecord> ProductionRecords { get; set; }=new ObservableCollection<ProductionRecord>();
@@ -77,15 +77,6 @@ namespace NFCDemo
         public static void Cancel()
         {
             cts.Cancel();
-        }
-
-        public string TimeOut
-        {
-            get => Global.TimeOut;
-            set
-            {
-                Global.TimeOut = value;
-            }
         }
     }
 
@@ -109,6 +100,8 @@ namespace NFCDemo
         /// 是否启用
         /// </summary>
         public bool Open { get; set; }
+
+        public int MT { get; set; }
     }
 
     public class ProductionRecord : ViewModelBase

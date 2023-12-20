@@ -40,30 +40,6 @@ namespace NFCDemo
 
         #endregion
 
-        #region 其他
-
-        static string machineid = "1";
-        public static string MachineID
-        {
-            get { return machineid; }
-            set
-            {
-                machineid = value;
-                DXH.Ini.DXHIni.WritePrivateProfileString("其他", "机台编号", machineid, GlobalFile);
-            }
-        }
-
-        static string timeout = "1";
-        public static string TimeOut
-        {
-            get { return timeout; }
-            set
-            {
-                timeout = value;
-                DXH.Ini.DXHIni.WritePrivateProfileString("其他", "超时时间", timeout, GlobalFile);
-            }
-        }
-        #endregion
 
         public static string GlobalFile = AppDomain.CurrentDomain.BaseDirectory + "Global.ini";
         public static void LoadIni()
@@ -73,17 +49,11 @@ namespace NFCDemo
 
                 mModbusRTU_COM = DXH.Ini.DXHIni.ContentReader("PLC参数", "串口号", mModbusRTU_COM, GlobalFile);
                 plcbaudRate = DXH.Ini.DXHIni.ContentReader("PLC参数", "波特率", plcbaudRate, GlobalFile);
-
-                machineid = DXH.Ini.DXHIni.ContentReader("其他", "机台编号", machineid, GlobalFile);
-                timeout = DXH.Ini.DXHIni.ContentReader("其他", "超时时间", timeout, GlobalFile);
             }
             else
             {
                 ModbusRTU_COM = mModbusRTU_COM;
                 PLCBaudRate = plcbaudRate;
-
-                MachineID = machineid;
-                TimeOut = timeout;
             }
         }
 

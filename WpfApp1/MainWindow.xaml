@@ -5,7 +5,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:NFCDemo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="刷卡统计2023.12.19"
+    xmlns:oxy="http://oxyplot.org/wpf"
+    xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+    Title="刷卡统计2023.12.20"
     Width="800"
     Height="450"
     WindowStartupLocation="CenterOwner"
@@ -17,7 +19,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
@@ -93,21 +95,30 @@
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition></RowDefinition>
-                <RowDefinition></RowDefinition>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <ScrollViewer Grid.Row="1">
-                <DataGrid
-                    x:Name="DataGrid"
-                    AlternatingRowBackground="LightGray"
-                    AutoGenerateColumns="False"
-                    CanUserAddRows="False"
-                    CanUserReorderColumns="False"
-                    CanUserSortColumns="False"
-                    FontSize="20"
-                    IsReadOnly="True">
-                </DataGrid>
-            </ScrollViewer>
+            <Grid Grid.Row="0" d:DataContext="{d:DesignInstance local:MainWindow}">
+                <wpf:CartesianChart LegendLocation="Left" Series="{Binding SeriesCollection}">
+                    <wpf:CartesianChart.AxisX>
+                        <wpf:Axis Title="姓名" Labels="{Binding Labels}" />
+                    </wpf:CartesianChart.AxisX>
+                    <wpf:CartesianChart.AxisY>
+                        <wpf:Axis Title="产量" LabelFormatter="{Binding Formatter}" />
+                    </wpf:CartesianChart.AxisY>
+                </wpf:CartesianChart>
+            </Grid>
+
+            <DataGrid
+                x:Name="DataGrid"
+                Grid.Row="1"
+                AlternatingRowBackground="LightGray"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                CanUserReorderColumns="False"
+                CanUserSortColumns="False"
+                FontSize="20"
+                IsReadOnly="True" />
         </Grid>
     </Grid>
 </Window>

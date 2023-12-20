@@ -19,7 +19,9 @@ using System.Windows.Shapes;
 using System.Threading;
 using System.Reflection;
 using System.Windows.Controls.Primitives;
-
+using DXH.ViewModel;
+using LiveCharts;
+using LiveCharts.Wpf;
 namespace NFCDemo
 {
     /// <summary>
@@ -110,6 +112,52 @@ namespace NFCDemo
                         }
                     }
                 }
+                //按日期排序
+                var temp2 = MainWindowViewModel.ProductionRecords.OrderBy(x => x.Date).ToList();
+                MainWindowViewModel.ProductionRecords.Clear();
+                foreach (var productionRecord in temp2)
+                {
+                    MainWindowViewModel.ProductionRecords.Add(productionRecord);
+                }
+                //DataGrid滚动到最后一行
+                DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
+
+                //创建柱状图
+                SeriesCollection = new SeriesCollection
+                {
+                    new ColumnSeries
+                    {
+                        Title = "实际工时",
+                        Values = new ChartValues<double>(),
+                        DataLabels = true
+                    }
+                };
+
+                //adding series will update and animate the chart automatically
+                SeriesCollection.Add(new ColumnSeries
+                {
+                    Title = "理论工时",
+                    Values = new ChartValues<double>(),
+                    DataLabels = true
+                });
+
+                //把每个人的工时统计相加生成一个新的集合
+                var tempDuration = MainWindowViewModel.ProductionRecords.GroupBy(x => x.EmployeeName).Select(x => new ProductionRecord()
+                {
+                    EmployeeName = x.Key,
+                    MachineCount = new int[MainWindowViewModel.MachineDatas.Count],
+                    Duration = x.Sum(y => y.Duration),
+                }).ToList();
+
+                foreach (var productionRecord in tempDuration)
+                {
+                    SeriesCollection[0].Values.Add(productionRecord.Duration);
+                    SeriesCollection[1].Values.Add(10.5 * DateTime.Now.Day);
+                }
+                Labels = tempDuration.Select(x => x.EmployeeName).ToArray();
+                Formatter = value => value.ToString("N");
+
+                DataContext = this;
             }
             catch (Exception e)
             {
@@ -128,7 +176,7 @@ namespace NFCDemo
             column = new DataGridTextColumn()
             {
                 Header = "日期",
-                Binding = new Binding("Date")
+                Binding = new Binding("Date"),
             };
             DataGrid.Columns.Add(column);
             foreach (var machineData in MainWindowViewModel.MachineDatas)
@@ -245,7 +293,7 @@ namespace NFCDemo
                     return;
                 }
 
-                if (PLCManager.Count[e]!=0)//产量为0不保存也不刷新
+                if (PLCManager.Count[e] != 0)//产量为0不保存也不刷新
                 {
                     CSVFile.AddNewLine(path,
                         new[]
@@ -255,13 +303,13 @@ namespace NFCDemo
                         });
                     ReadCsvAndRefresh(path);
                 }
-                LdrLog($"{LastUser[e]}自动下机");
+                LdrLog($"{LastUser[e].Name}自动下机");
                 LastUser[e] = null;
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
             }
             catch (Exception exception)
             {
-                MessageBox.Show(exception.Message);
+                MessageBox.Show("PLC给结束信号报错：" + exception.Message);
             }
         }
 
@@ -277,7 +325,7 @@ namespace NFCDemo
                     {
                         var day = fileDateTime.Day;
                         //获取csv中的最后一行
-                        var lastLine = File.ReadLines(path).Last();
+                        var lastLine = File.ReadLines(path, Encoding.GetEncoding("GB2312")).Last();
                         var items = lastLine.Split(',');
                         var name = items[2];
                         var machineName = items[3];
@@ -298,26 +346,49 @@ namespace NFCDemo
                             {
                                 duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
                             }
-                            temp.Duration = duration;
+                            temp.Duration = Math.Round(duration / 3600, 2);
                             MainWindowViewModel.ProductionRecords.Add(temp);
                         }
                         else
                         {
                             int indexMachineData = MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == machineName));
-                            yield.MachineCount[indexMachineData] = count;
+                            yield.MachineCount[indexMachineData] += count;
+                            yield.MachineCount = yield.MachineCount;//写入才能触发set
                             double duration = 0;
                             for (int i = 0; i < yield.MachineCount.Length; i++)
                             {
                                 duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
                             }
-                            yield.Duration = duration;
+                            yield.Duration = Math.Round(duration / 3600, 2);
                         }
                     }
+                    //DataGrid滚动到最后一行
+                    DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
+
+                    //更新柱状图
+                    SeriesCollection[0].Values.Clear();
+                    SeriesCollection[1].Values.Clear();
+                    //把每个人的工时统计相加生成一个新的集合
+                    var tempDuration = MainWindowViewModel.ProductionRecords.GroupBy(x => x.EmployeeName).Select(x => new ProductionRecord()
+                    {
+                        EmployeeName = x.Key,
+                        MachineCount = new int[MainWindowViewModel.MachineDatas.Count],
+                        Duration = x.Sum(y => y.Duration),
+                    }).ToList();
+
+                    foreach (var productionRecord in tempDuration)
+                    {
+                        SeriesCollection[0].Values.Add(productionRecord.Duration);
+                        SeriesCollection[1].Values.Add(10.5 * DateTime.Now.Day);
+                    }
+                    Labels = MainWindowViewModel.ProductionRecords.Select(x => x.EmployeeName).ToArray();
+                    Formatter = value => value.ToString("N");
+                   
                 }));
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                MessageBox.Show("读取csv刷新界面报错：" + e.Message);
             }
         }
 
@@ -453,18 +524,18 @@ namespace NFCDemo
                                             //    MessageBox.Show("文件被占用，请关闭文件后再试");
                                             //    continue;
                                             //}
-                                            if (PLCManager.Count[machineIndex]!=0)
+                                            if (PLCManager.Count[machineIndex] != 0)
                                             {
                                                 CSVFile.AddNewLine(path,
                                                     new[]
                                                     {
                                                         DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                        LastUser[machineIndex].Name, Global.MachineID,
+                                                        LastUser[machineIndex].Name, MainWindowViewModel.MachineDatas[machineIndex].Name,
                                                         PLCManager.Count[machineIndex].ToString()
                                                     });
                                                 ReadCsvAndRefresh(path);
                                             }
-                                            LdrLog($"{LastUser[machineIndex]}下机，{user}上机");
+                                            LdrLog($"{LastUser[machineIndex].Name}下机，{user.Name}上机");
                                             LastUser[machineIndex] = user;
                                         }
 
@@ -657,7 +728,13 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
+            LastUser[0] = new User() { Name = "总经理" };
+
 
         }
+
+        public SeriesCollection SeriesCollection { get; set; }
+        public string[] Labels { get; set; }
+        public Func<double, string> Formatter { get; set; }
     }
 }
