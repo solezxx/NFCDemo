@@ -93,15 +93,22 @@ namespace NFCDemo
         public string Name { get; set; }
         public string COM { get; set; }
         /// <summary>
-        /// 单pcs耗时，单位秒
+        /// 单pcs耗时
         /// </summary>
         public double CT { get; set; }
         /// <summary>
         /// 是否启用
         /// </summary>
         public bool Open { get; set; }
-
+        /// <summary>
+        /// 超时时间
+        /// </summary>
         public int MT { get; set; }
+
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string SerNum { get; set; }
     }
 
     public class ProductionRecord : ViewModelBase

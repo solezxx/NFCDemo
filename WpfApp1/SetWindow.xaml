@@ -40,8 +40,8 @@
                             Header="机器名称" />
                         <DataGridTextColumn
                             Width="100"
-                            Binding="{Binding COM}"
-                            Header="读卡器COM口" />
+                            Binding="{Binding SerNum}"
+                            Header="序列号" />
                         <DataGridTextColumn
                             Width="100"
                             Binding="{Binding CT}"

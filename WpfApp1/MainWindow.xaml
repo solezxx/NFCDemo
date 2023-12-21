@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:oxy="http://oxyplot.org/wpf"
     xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-    Title="刷卡统计2023.12.20"
+    Title="刷卡统计2023.12.21"
     Width="800"
     Height="450"
     WindowStartupLocation="CenterOwner"

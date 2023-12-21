@@ -39,16 +39,73 @@ namespace NFCDemo
             PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
             Init();
         }
+
+        public List<string> ConnectedNameList = new List<string>();
         public void Init()
         {
-            for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+            ConnectedNameList.Clear();
+            var buf = new byte[256];
+            //获取电脑的所有COM口
+            var coms = System.IO.Ports.SerialPort.GetPortNames();
+            CReader[] temp = new CReader[coms.Length];
+            //尝试连接所有的COM口
+            for (int i = 0; i < coms.Length; i++)
             {
-                if (MainWindowViewModel.MachineDatas[i].Open)
+                temp[i] = new CReader();
+                if (IntPtr.Zero != temp[i].GetHComm() || coms[i]==Global.ModbusRTU_COM)//如果已经打开或者遍历到了PLC的串口，跳过
+                    continue;
+                int ret = temp[i].OpenComm(Convert.ToInt32(coms[i].Replace("COM", "")), 9600);
+                if (0 == ret)
                 {
-                    reader[i] = new CReader();
-                    OpenCom(i);
+                    var getNumRet = temp[i].GetSerNum(0x00, ref buf[0]);
+                    //如果有返回说明是读卡器
+                    if (0 == getNumRet)
+                    {
+                        var strTmp = "";
+                        for (int j = 0; j < 8; j++)
+                        {
+                            strTmp += buf[j + 1].ToString("X2") + " ";
+                        }
+                        LdrLog($"{coms[i]}序列号：{strTmp}");
+                        //判断与配置中的序列号是否一致，一致则开始连接
+                        foreach (var machineData in MainWindowViewModel.MachineDatas)
+                        {
+                            if (machineData.SerNum.Replace(" ","")==strTmp.Replace(" ",""))
+                            {
+                                machineData.COM = coms[i];
+                                ConnectedNameList.Add(machineData.Name);
+                                temp[i].CloseComm();//关闭temp实例的端口，给真实的实例打开端口
+                                OpenCom(MainWindowViewModel.MachineDatas.IndexOf(machineData));
+                                LdrLog($"NFC {machineData.Name} Open success!");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //没反应说明可能不是读卡器，断开连接
+                        temp[i].CloseComm();
+                    }
                 }
             }
+
+            //判断连接数量是否与配置中Open的数量一致
+            if (ConnectedNameList.Count != MainWindowViewModel.MachineDatas.Count(x => x.Open))
+            {
+                //弹窗显示哪几个没连接
+                string str = "";
+
+                foreach (var machineData in MainWindowViewModel.MachineDatas.Where(x=>x.Open))
+                {
+                    if (!ConnectedNameList.Contains(machineData.Name))
+                    {
+                        str += machineData.Name + " ";
+                    }
+                }
+                LdrLog(str+"连接失败！");
+                MessageBox.Show(str + "连接失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
             ColumnIni();
             FirstStartReadCsv();
         }
@@ -415,6 +472,7 @@ namespace NFCDemo
         User[] LastUser = new User[20];
         public void OpenCom(int index)
         {
+            reader[index]=new CReader();
             if (IntPtr.Zero == reader[index].GetHComm())                   //判断串口是否打开
             {
                 int ret = reader[index].OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM", "")), 9600);
@@ -599,6 +657,8 @@ namespace NFCDemo
                     {
                         if (e is OperationCanceledException)
                         {
+                            //关闭串口
+                            reader[machineIndex].CloseComm();
                             return;
                         }
                         else

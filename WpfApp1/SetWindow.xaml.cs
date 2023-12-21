@@ -68,9 +68,10 @@ namespace NFCDemo
             MainWindowViewModel.MachineDatas.Add(new MachineData()
             {
                 Name = "输入名字",
-                COM = "COM100",
+                SerNum = "输入序列号",
                 CT = 1,
-                Open = true
+                Open = true,
+                MT = 30
             });
         }
 
