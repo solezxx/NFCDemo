@@ -10,6 +10,7 @@
     Title="刷卡统计2023.12.21"
     Width="800"
     Height="450"
+    Loaded="MainWindow_OnLoaded"
     WindowStartupLocation="CenterOwner"
     WindowState="Maximized"
     mc:Ignorable="d">

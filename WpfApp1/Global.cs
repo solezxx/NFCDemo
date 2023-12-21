@@ -39,21 +39,31 @@ namespace NFCDemo
         }
 
         #endregion
-
+        static string lastUsers = "";
+        public static string LastUsers
+        {
+            get { return lastUsers; }
+            set
+            {
+                lastUsers = value;
+                DXH.Ini.DXHIni.WritePrivateProfileString("其他", "人员", lastUsers, GlobalFile);
+            }
+        }
 
         public static string GlobalFile = AppDomain.CurrentDomain.BaseDirectory + "Global.ini";
         public static void LoadIni()
         {
             if (File.Exists(GlobalFile))
             {
-
                 mModbusRTU_COM = DXH.Ini.DXHIni.ContentReader("PLC参数", "串口号", mModbusRTU_COM, GlobalFile);
                 plcbaudRate = DXH.Ini.DXHIni.ContentReader("PLC参数", "波特率", plcbaudRate, GlobalFile);
+                lastUsers = DXH.Ini.DXHIni.ContentReader("其他", "人员", lastUsers, GlobalFile);
             }
             else
             {
                 ModbusRTU_COM = mModbusRTU_COM;
                 PLCBaudRate = plcbaudRate;
+                LastUsers = lastUsers;
             }
         }
 

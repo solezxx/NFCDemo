@@ -34,6 +34,7 @@ namespace NFCDemo
             InitializeComponent();
             viewModel = DataContext as MainWindowViewModel;
             Global.Ini();
+            ReadLastUser();
             PLCManager.Initialize();
             PLCManager.XinjiePLC.ModbusStateChanged += Modbus_ConnectStateChanged;
             PLCManager.PLCStopChanged += PLCManager_PLCStopChanged;
@@ -52,7 +53,7 @@ namespace NFCDemo
             for (int i = 0; i < coms.Length; i++)
             {
                 temp[i] = new CReader();
-                if (IntPtr.Zero != temp[i].GetHComm() || coms[i]==Global.ModbusRTU_COM)//如果已经打开或者遍历到了PLC的串口，跳过
+                if (IntPtr.Zero != temp[i].GetHComm() || coms[i] == Global.ModbusRTU_COM)//如果已经打开或者遍历到了PLC的串口，跳过
                     continue;
                 int ret = temp[i].OpenComm(Convert.ToInt32(coms[i].Replace("COM", "")), 9600);
                 if (0 == ret)
@@ -70,7 +71,7 @@ namespace NFCDemo
                         //判断与配置中的序列号是否一致，一致则开始连接
                         foreach (var machineData in MainWindowViewModel.MachineDatas)
                         {
-                            if (machineData.SerNum.Replace(" ","")==strTmp.Replace(" ",""))
+                            if (machineData.SerNum.Replace(" ", "") == strTmp.Replace(" ", ""))
                             {
                                 machineData.COM = coms[i];
                                 ConnectedNameList.Add(machineData.Name);
@@ -95,21 +96,34 @@ namespace NFCDemo
                 //弹窗显示哪几个没连接
                 string str = "";
 
-                foreach (var machineData in MainWindowViewModel.MachineDatas.Where(x=>x.Open))
+                foreach (var machineData in MainWindowViewModel.MachineDatas.Where(x => x.Open))
                 {
                     if (!ConnectedNameList.Contains(machineData.Name))
                     {
                         str += machineData.Name + " ";
                     }
                 }
-                LdrLog(str+"连接失败！");
+                LdrLog(str + "连接失败！");
                 MessageBox.Show(str + "连接失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             ColumnIni();
             FirstStartReadCsv();
+            SetTodayRowColor();
         }
 
+        public void ReadLastUser()
+        {
+            //读取Global中保存的LastUsers，初始化LastUser
+            var lastUsers = Global.LastUsers.Split(',');
+            for (int i = 0; i < lastUsers.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(lastUsers[i]))
+                {
+                    LastUser[i] = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == lastUsers[i]);
+                }
+            }
+        }
         public void FirstStartReadCsv()
         {
             try
@@ -279,7 +293,26 @@ namespace NFCDemo
 
             return null;
         }
+        private void SetTodayRowColor()
+        {
+            //将DataGrid中的日期为当天的行的单元格颜色设置为绿色
 
+            for (int i = 0; i < DataGrid.Items.Count; i++)
+            {
+                var item = DataGrid.Items[i] as ProductionRecord;
+                if (item.Date == DateTime.Now.Day)
+                {
+                    for (int j = 0; j < DataGrid.Columns.Count; j++)
+                    {
+                        var cell = GetCell(DataGrid, i, j);
+                        if (cell != null)
+                        {
+                            cell.Background = new SolidColorBrush(Colors.LightGreen);
+                        }
+                    }
+                }
+            }
+        }
         // 获取 DataGrid 的行
         private DataGridRow GetRow(DataGrid dataGrid, int index)
         {
@@ -362,6 +395,13 @@ namespace NFCDemo
                 }
                 LdrLog($"{LastUser[e].Name}自动下机");
                 LastUser[e] = null;
+                //将最后一次刷卡的人员保存到文件
+                string lastusers = "";
+                foreach (var u in LastUser)
+                {
+                    lastusers += u == null ? "" : u.Name + ",";
+                }
+                Global.LastUsers = lastusers;
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
             }
             catch (Exception exception)
@@ -421,6 +461,7 @@ namespace NFCDemo
                     }
                     //DataGrid滚动到最后一行
                     DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
+                    SetTodayRowColor();
 
                     //更新柱状图
                     SeriesCollection[0].Values.Clear();
@@ -440,7 +481,7 @@ namespace NFCDemo
                     }
                     Labels = MainWindowViewModel.ProductionRecords.Select(x => x.EmployeeName).ToArray();
                     Formatter = value => value.ToString("N");
-                   
+
                 }));
             }
             catch (Exception e)
@@ -472,7 +513,7 @@ namespace NFCDemo
         User[] LastUser = new User[20];
         public void OpenCom(int index)
         {
-            reader[index]=new CReader();
+            reader[index] = new CReader();
             if (IntPtr.Zero == reader[index].GetHComm())                   //判断串口是否打开
             {
                 int ret = reader[index].OpenComm(Convert.ToInt32(MainWindowViewModel.MachineDatas[index].COM.Replace("COM", "")), 9600);
@@ -596,6 +637,13 @@ namespace NFCDemo
                                             LdrLog($"{LastUser[machineIndex].Name}下机，{user.Name}上机");
                                             LastUser[machineIndex] = user;
                                         }
+                                        //将最后一次刷卡的人员保存到文件
+                                        string lastusers = "";
+                                        foreach (var u in LastUser)
+                                        {
+                                            lastusers += u == null ? "" : u.Name + ",";
+                                        }
+                                        Global.LastUsers = lastusers;
 
                                         //只要扫到有人员就给信号
                                         PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + machineIndex, new[] { 1 });
@@ -788,13 +836,27 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
-            LastUser[0] = new User() { Name = "总经理" };
+            //将DataGrid最后一行的单元格颜色设置为绿色
 
+            for (int j = 0; j < DataGrid.Columns.Count; j++)
+            {
+                var cell = GetCell(DataGrid, DataGrid.Items.Count - 1, j);
+                if (cell != null)
+                {
+                    cell.Background = new SolidColorBrush(Colors.LightGreen);
+                }
+            }
 
         }
 
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
         public Func<double, string> Formatter { get; set; }
+
+        private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            await Task.Delay(500);
+            SetTodayRowColor();
+        }
     }
 }
