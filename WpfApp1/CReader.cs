@@ -94,7 +94,7 @@ namespace Demo
         static extern int API_GetSerNum (IntPtr commHandle, int DeviceAddress,ref byte buffer);
         public int GetSerNum(int DeviceAddress, ref byte buffer)                 //读取序列号
         {
-            if (IntPtr.Zero == m_hComm)
+            if (IntPtr.Zero == m_hComm) 
                 return 1;
             return API_GetSerNum(m_hComm, DeviceAddress, ref buffer);
         }

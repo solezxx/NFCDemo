@@ -42,72 +42,87 @@ namespace NFCDemo
         }
 
         public List<string> ConnectedNameList = new List<string>();
+        List<string> findNameList = new List<string>();
         public void Init()
         {
-            ConnectedNameList.Clear();
-            var buf = new byte[256];
-            //获取电脑的所有COM口
-            var coms = System.IO.Ports.SerialPort.GetPortNames();
-            CReader[] temp = new CReader[coms.Length];
-            //尝试连接所有的COM口
-            for (int i = 0; i < coms.Length; i++)
+            try
             {
-                temp[i] = new CReader();
-                if (IntPtr.Zero != temp[i].GetHComm() || coms[i] == Global.ModbusRTU_COM)//如果已经打开或者遍历到了PLC的串口，跳过
-                    continue;
-                int ret = temp[i].OpenComm(Convert.ToInt32(coms[i].Replace("COM", "")), 9600);
-                if (0 == ret)
+                findNameList.Clear();
+                ConnectedNameList.Clear();
+                var buf = new byte[256];
+                //获取电脑的所有COM口
+                var coms = System.IO.Ports.SerialPort.GetPortNames();
+                CReader[] temp = new CReader[coms.Length];
+                //尝试连接所有的COM口
+                for (int i = 0; i < coms.Length; i++)
                 {
-                    var getNumRet = temp[i].GetSerNum(0x00, ref buf[0]);
-                    //如果有返回说明是读卡器
-                    if (0 == getNumRet)
+                    temp[i] = new CReader();
+                    if (IntPtr.Zero != temp[i].GetHComm() || coms[i] == Global.ModbusRTU_COM)//如果已经打开或者遍历到了PLC的串口，跳过
+                        continue;
+                    int ret = temp[i].OpenComm(Convert.ToInt32(coms[i].Replace("COM", "")), 9600);
+                    if (0 == ret)
                     {
-                        var strTmp = "";
-                        for (int j = 0; j < 8; j++)
+                        var getNumRet = temp[i].GetSerNum(0x00, ref buf[0]);
+                        //如果有返回说明是读卡器
+                        if (0 == getNumRet || 1 == getNumRet)
                         {
-                            strTmp += buf[j + 1].ToString("X2") + " ";
-                        }
-                        LdrLog($"{coms[i]}序列号：{strTmp}");
-                        //判断与配置中的序列号是否一致，一致则开始连接
-                        foreach (var machineData in MainWindowViewModel.MachineDatas)
-                        {
-                            if (machineData.SerNum.Replace(" ", "") == strTmp.Replace(" ", ""))
+                            var strTmp = "";
+                            for (int j = 0; j < 8; j++)
                             {
-                                machineData.COM = coms[i];
-                                temp[i].CloseComm();//关闭temp实例的端口，给真实的实例打开端口
-                                OpenCom(MainWindowViewModel.MachineDatas.IndexOf(machineData));
-                                break;
+                                strTmp += buf[j + 1].ToString("X2") + " ";
+                            }
+                            LdrLog($"{coms[i]}序列号：{strTmp}");
+                            //判断与配置中的序列号是否一致，一致则开始连接
+                            foreach (var machineData in MainWindowViewModel.MachineDatas)
+                            {
+                                if (machineData.SerNum.Replace(" ", "") == strTmp.Replace(" ", ""))
+                                {
+                                    machineData.COM = coms[i];
+                                    temp[i].CloseComm();//关闭temp实例的端口，给真实的实例打开端口
+                                    findNameList.Add(machineData.Name);
+                                    //OpenCom(MainWindowViewModel.MachineDatas.IndexOf(machineData));
+                                    break;
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        //没反应说明可能不是读卡器，断开连接
-                        temp[i].CloseComm();
+                        else
+                        {
+                            //没反应说明可能不是读卡器，断开连接
+                            temp[i].CloseComm();
+                        }
                     }
                 }
-            }
 
-            //判断连接数量是否与配置中Open的数量一致
-            if (ConnectedNameList.Count != MainWindowViewModel.MachineDatas.Count(x => x.Open))
-            {
-                //弹窗显示哪几个没连接
-                string str = "";
-
-                foreach (var machineData in MainWindowViewModel.MachineDatas.Where(x => x.Open))
+                for (int j = 0; j < findNameList.Count; j++)
                 {
-                    if (!ConnectedNameList.Contains(machineData.Name))
-                    {
-                        str += machineData.Name + " ";
-                    }
+                    OpenCom(MainWindowViewModel.MachineDatas.IndexOf(MainWindowViewModel.MachineDatas.FirstOrDefault(x => x.Name == findNameList[j] && x.Open)));
                 }
-                LdrLog(str + "连接失败！");
-                MessageBox.Show(str + "连接失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
 
-            ColumnIni();
-            FirstStartReadCsv();
-            SetTodayRowColor();
+                //判断连接数量是否与配置中Open的数量一致
+                if (ConnectedNameList.Count != MainWindowViewModel.MachineDatas.Count(x => x.Open))
+                {
+                    //弹窗显示哪几个没连接
+                    string str = "";
+
+                    foreach (var machineData in MainWindowViewModel.MachineDatas.Where(x => x.Open))
+                    {
+                        if (!ConnectedNameList.Contains(machineData.Name))
+                        {
+                            str += machineData.Name + " ";
+                        }
+                    }
+                    LdrLog(str + "连接失败！");
+                    MessageBox.Show(str + "连接失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                ColumnIni();
+                FirstStartReadCsv();
+                SetTodayRowColor();
+            }
+            catch (Exception e)
+            {
+                LdrLog(e.Message);
+            }
         }
 
         public void ReadLastUser()
@@ -584,10 +599,9 @@ namespace NFCDemo
                                             strTmp += string.Format("{0:X2} ", snr[i]);
                                         }
                                     }
-
-                                    LdrLog("SN of card is:" + strTmp);
                                     if (String.IsNullOrEmpty(strTmp))
                                         continue;
+                                    LdrLog("SN of card is:" + strTmp);
 
                                     //匹配用户
                                     var user = MainWindowViewModel.AllUser.FirstOrDefault(x => x.ID == strTmp);
@@ -883,13 +897,12 @@ namespace NFCDemo
 
         private void MainWindow_OnClosed(object sender, EventArgs e)
         {
-            //断开所有com口
-            foreach (var machineData in MainWindowViewModel.MachineDatas)
+            try
             {
-                if (!string.IsNullOrEmpty(machineData.COM))
-                {
-                    reader[MainWindowViewModel.MachineDatas.IndexOf(machineData)]?.CloseComm();
-                }
+                MainWindowViewModel.Cancel();
+            }
+            catch (Exception exception)
+            {
             }
         }
     }
