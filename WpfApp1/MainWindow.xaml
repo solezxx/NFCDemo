@@ -9,7 +9,7 @@
     Title="刷卡统计2023.12.22"
     Width="800"
     Height="450"
-    Loaded="MainWindow_OnLoaded"
+    Closed="MainWindow_OnClosed"
     WindowStartupLocation="CenterOwner"
     WindowState="Maximized"
     mc:Ignorable="d">
@@ -41,7 +41,7 @@
                     Width="50"
                     Click="test_click"
                     Content="测试"
-                    Visibility="Visible" />
+                    Visibility="Collapsed" />
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">

@@ -74,10 +74,8 @@ namespace NFCDemo
                             if (machineData.SerNum.Replace(" ", "") == strTmp.Replace(" ", ""))
                             {
                                 machineData.COM = coms[i];
-                                ConnectedNameList.Add(machineData.Name);
                                 temp[i].CloseComm();//关闭temp实例的端口，给真实的实例打开端口
                                 OpenCom(MainWindowViewModel.MachineDatas.IndexOf(machineData));
-                                LdrLog($"NFC {machineData.Name} Open success!");
                                 break;
                             }
                         }
@@ -295,7 +293,7 @@ namespace NFCDemo
         }
         private void SetTodayRowColor()
         {
-            DataGrid.Items.Refresh(); 
+            DataGrid.Items.Refresh();
             for (int i = 0; i < DataGrid.Items.Count; i++)
             {
                 var item = DataGrid.Items[i] as ProductionRecord;
@@ -412,7 +410,7 @@ namespace NFCDemo
             {
                 Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    var machineName= path.Replace(Global.SavePath, "").Replace($"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv", "");
+                    var machineName = path.Replace(Global.SavePath, "").Replace($"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv", "");
                     var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
                     var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
                     if (fileDateTime.Month == DateTime.Now.Month)
@@ -516,6 +514,7 @@ namespace NFCDemo
                 {
                     LdrLog($"NFC {MainWindowViewModel.MachineDatas[index].Name} Open success!");
                     ReadNfc(index);
+                    ConnectedNameList.Add(MainWindowViewModel.MachineDatas[index].Name);
                 }
                 else
                 {
@@ -587,6 +586,8 @@ namespace NFCDemo
                                     }
 
                                     LdrLog("SN of card is:" + strTmp);
+                                    if (String.IsNullOrEmpty(strTmp))
+                                        continue;
 
                                     //匹配用户
                                     var user = MainWindowViewModel.AllUser.FirstOrDefault(x => x.ID == strTmp);
@@ -831,19 +832,13 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
-            LastUser[0]= MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == "总经理");
-            PLCManager_PLCStopChanged(null,0);
+            LastUser[0] = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == "总经理");
+            PLCManager_PLCStopChanged(null, 0);
         }
 
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
         public Func<double, string> Formatter { get; set; }
-
-        private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            //await Task.Delay(500);
-            //SetTodayRowColor();
-        }
 
         private void DataGrid_OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -884,6 +879,18 @@ namespace NFCDemo
             }
 
             return null;
+        }
+
+        private void MainWindow_OnClosed(object sender, EventArgs e)
+        {
+            //断开所有com口
+            foreach (var machineData in MainWindowViewModel.MachineDatas)
+            {
+                if (!string.IsNullOrEmpty(machineData.COM))
+                {
+                    reader[MainWindowViewModel.MachineDatas.IndexOf(machineData)]?.CloseComm();
+                }
+            }
         }
     }
 }
