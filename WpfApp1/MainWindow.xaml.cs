@@ -295,20 +295,16 @@ namespace NFCDemo
         }
         private void SetTodayRowColor()
         {
-            //将DataGrid中的日期为当天的行的单元格颜色设置为绿色
-
+            DataGrid.Items.Refresh(); 
             for (int i = 0; i < DataGrid.Items.Count; i++)
             {
                 var item = DataGrid.Items[i] as ProductionRecord;
                 if (item.Date == DateTime.Now.Day)
                 {
-                    for (int j = 0; j < DataGrid.Columns.Count; j++)
+                    var row = GetRow(DataGrid, i);
+                    if (row != null)
                     {
-                        var cell = GetCell(DataGrid, i, j);
-                        if (cell != null)
-                        {
-                            cell.Background = new SolidColorBrush(Colors.LightGreen);
-                        }
+                        row.Background = new SolidColorBrush(Colors.LightGreen);
                     }
                 }
             }
@@ -322,7 +318,7 @@ namespace NFCDemo
             {
                 // 如果行尚未生成，请手动刷新
                 dataGrid.UpdateLayout();
-                dataGrid.ScrollIntoView(dataGrid.Items[index]);
+                //dataGrid.ScrollIntoView(dataGrid.Items[index]);
                 rowContainer = (DataGridRow)dataGrid.ItemContainerGenerator.ContainerFromIndex(index);
             }
 
@@ -461,7 +457,6 @@ namespace NFCDemo
                     }
                     //DataGrid滚动到最后一行
                     DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
-                    SetTodayRowColor();
 
                     //更新柱状图
                     SeriesCollection[0].Values.Clear();
@@ -481,7 +476,7 @@ namespace NFCDemo
                     }
                     Labels = MainWindowViewModel.ProductionRecords.Select(x => x.EmployeeName).ToArray();
                     Formatter = value => value.ToString("N");
-
+                    SetTodayRowColor();
                 }));
             }
             catch (Exception e)
@@ -836,17 +831,8 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
-            //将DataGrid最后一行的单元格颜色设置为绿色
-
-            for (int j = 0; j < DataGrid.Columns.Count; j++)
-            {
-                var cell = GetCell(DataGrid, DataGrid.Items.Count - 1, j);
-                if (cell != null)
-                {
-                    cell.Background = new SolidColorBrush(Colors.LightGreen);
-                }
-            }
-
+            LastUser[0]= MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == "总经理");
+            PLCManager_PLCStopChanged(null,0);
         }
 
         public SeriesCollection SeriesCollection { get; set; }
@@ -855,8 +841,49 @@ namespace NFCDemo
 
         private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
-            await Task.Delay(500);
-            SetTodayRowColor();
+            //await Task.Delay(500);
+            //SetTodayRowColor();
+        }
+
+        private void DataGrid_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            // 查找DataGrid内部的ScrollViewer
+            ScrollViewer scrollViewer = FindVisualChild<ScrollViewer>(DataGrid);
+
+            // 注册ScrollChanged事件
+            if (scrollViewer != null)
+            {
+                scrollViewer.ScrollChanged += DataGrid_ScrollChanged;
+            }
+        }
+        private async void DataGrid_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            await Task.Run((() =>
+            {
+                Dispatcher.BeginInvoke(new Action((SetTodayRowColor)));
+            }));
+        }
+        private T FindVisualChild<T>(DependencyObject visual) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(visual); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(visual, i);
+
+                if (child != null && child is T)
+                {
+                    return (T)child;
+                }
+                else
+                {
+                    T childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                    {
+                        return childOfChild;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:oxy="http://oxyplot.org/wpf"
     xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-    Title="刷卡统计2023.12.21"
+    Title="刷卡统计2023.12.22"
     Width="800"
     Height="450"
     Loaded="MainWindow_OnLoaded"
@@ -42,7 +42,7 @@
                     Width="50"
                     Click="test_click"
                     Content="测试"
-                    Visibility="Collapsed" />
+                    Visibility="Visible" />
             </StackPanel>
 
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
@@ -96,20 +96,23 @@
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
+                <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" d:DataContext="{d:DesignInstance local:MainWindow}">
                 <wpf:CartesianChart LegendLocation="Left" Series="{Binding SeriesCollection}">
                     <wpf:CartesianChart.AxisX>
-                        <wpf:Axis Title="姓名" Labels="{Binding Labels}" />
+                        <wpf:Axis
+                            FontSize="20"
+                            FontWeight="Bold"
+                            Foreground="Black"
+                            Labels="{Binding Labels}" />
                     </wpf:CartesianChart.AxisX>
                     <wpf:CartesianChart.AxisY>
                         <wpf:Axis Title="产量" LabelFormatter="{Binding Formatter}" />
                     </wpf:CartesianChart.AxisY>
                 </wpf:CartesianChart>
             </Grid>
-
             <DataGrid
                 x:Name="DataGrid"
                 Grid.Row="1"
@@ -119,7 +122,8 @@
                 CanUserReorderColumns="False"
                 CanUserSortColumns="False"
                 FontSize="20"
-                IsReadOnly="True" />
+                IsReadOnly="True"
+                Loaded="DataGrid_OnLoaded" />
         </Grid>
     </Grid>
 </Window>
