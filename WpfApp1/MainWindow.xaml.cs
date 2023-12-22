@@ -133,6 +133,7 @@ namespace NFCDemo
                 var dirs = Directory.GetDirectories(Global.SavePath);
                 foreach (var dir in dirs)
                 {
+                    var machineName = dir.Replace(Global.SavePath, "");
                     var files = Directory.GetFiles(dir, "*.csv");
                     foreach (var file in files)
                     {
@@ -147,7 +148,6 @@ namespace NFCDemo
                             {
                                 var items = line.Split(',');
                                 var name = items[2];
-                                var machineName = items[3];
                                 var count = int.Parse(items[4]);
                                 var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.Date == day));
                                 if (yield == null)
@@ -412,6 +412,7 @@ namespace NFCDemo
             {
                 Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    var machineName= path.Replace(Global.SavePath, "").Replace($"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv", "");
                     var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
                     var fileDateTime = DateTime.ParseExact(fileName, "yyyy-MM-dd", null);
                     if (fileDateTime.Month == DateTime.Now.Month)
@@ -421,7 +422,6 @@ namespace NFCDemo
                         var lastLine = File.ReadLines(path, Encoding.GetEncoding("GB2312")).Last();
                         var items = lastLine.Split(',');
                         var name = items[2];
-                        var machineName = items[3];
                         var count = int.Parse(items[4]);
                         var yield = MainWindowViewModel.ProductionRecords.FirstOrDefault(x => (x.EmployeeName == name && x.Date == day));
                         if (yield == null)
