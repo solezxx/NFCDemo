@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:NFCDemo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-    Title="刷卡统计2023.12.22"
+    Title="刷卡统计2023.12.23"
     Width="800"
     Height="450"
     Closed="MainWindow_OnClosed"
@@ -52,7 +52,7 @@
                     PanningMode="Both">
                     <TextBox
                         x:Name="TextBox"
-                        Height="30"
+                        Height="40"
                         MinWidth="500"
                         IsReadOnly="True"
                         KeyDown="TextBox_KeyDown"
@@ -102,7 +102,7 @@
                 <wpf:CartesianChart LegendLocation="Left" Series="{Binding SeriesCollection}">
                     <wpf:CartesianChart.AxisX>
                         <wpf:Axis
-                            FontSize="20"
+                            FontSize="15"
                             FontWeight="Bold"
                             Foreground="Black"
                             Labels="{Binding Labels}" />

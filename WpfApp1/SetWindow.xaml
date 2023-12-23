@@ -13,6 +13,10 @@
         <local:MainWindowViewModel />
     </Window.DataContext>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
         <StackPanel Orientation="Vertical">
             <Grid Height="200">
                 <Grid.ColumnDefinitions>
@@ -78,5 +82,32 @@
                 Content="保存" />
 
         </StackPanel>
+        <Grid Grid.Row="1">
+            <StackPanel>
+                <StackPanel Margin="20" Orientation="Horizontal">
+                    <TextBlock Text="选择串口：" />
+                    <ComboBox x:Name="ComboBox" Width="100" />
+                    <Button
+                        x:Name="ConnectButton"
+                        Width="70"
+                        Margin="30,0,0,0"
+                        Click="Connect_Click"
+                        Content="连接" />
+                    <Button
+                        Margin="30,0,0,0"
+                        Click="ReadSerNum"
+                        Content="读取序列号" />
+                </StackPanel>
+                <StackPanel Margin="20" Orientation="Horizontal">
+                    <TextBlock Text="序列号：" />
+                    <TextBox x:Name="SetSerNumBox" Width="100" />
+                    <Button
+                        Width="70"
+                        Margin="30,0,0,0"
+                        Click="SetSerNum_Click"
+                        Content="设置" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

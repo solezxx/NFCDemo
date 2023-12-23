@@ -80,7 +80,6 @@ namespace NFCDemo
                                     machineData.COM = coms[i];
                                     temp[i].CloseComm();//关闭temp实例的端口，给真实的实例打开端口
                                     findNameList.Add(machineData.Name);
-                                    //OpenCom(MainWindowViewModel.MachineDatas.IndexOf(machineData));
                                     break;
                                 }
                             }
@@ -213,7 +212,8 @@ namespace NFCDemo
                     {
                         Title = "实际工时",
                         Values = new ChartValues<double>(),
-                        DataLabels = true
+                        DataLabels = true,
+                        MaxColumnWidth = 30
                     }
                 };
 
@@ -222,7 +222,8 @@ namespace NFCDemo
                 {
                     Title = "理论工时",
                     Values = new ChartValues<double>(),
-                    DataLabels = true
+                    DataLabels = true,
+                    MaxColumnWidth = 30
                 });
 
                 //把每个人的工时统计相加生成一个新的集合
@@ -232,13 +233,16 @@ namespace NFCDemo
                     MachineCount = new int[MainWindowViewModel.MachineDatas.Count],
                     Duration = x.Sum(y => y.Duration),
                 }).ToList();
-
                 foreach (var productionRecord in tempDuration)
                 {
                     SeriesCollection[0].Values.Add(productionRecord.Duration);
-                    SeriesCollection[1].Values.Add(10.5 * DateTime.Now.Day);
+                    SeriesCollection[1].Values.Add(10.5 * MainWindowViewModel.ProductionRecords.Count(x => x.EmployeeName == productionRecord.EmployeeName));
                 }
-                Labels = tempDuration.Select(x => x.EmployeeName).ToArray();
+                Labels.Clear();
+                foreach (var productionRecord in tempDuration)
+                {
+                    Labels.Add(productionRecord.EmployeeName);
+                }
                 Formatter = value => value.ToString("N");
 
                 DataContext = this;
@@ -408,7 +412,7 @@ namespace NFCDemo
                 string lastusers = "";
                 foreach (var u in LastUser)
                 {
-                    lastusers += u == null ? "" : u.Name + ",";
+                    lastusers += (u == null ? "" : u.Name) + ",";
                 }
                 Global.LastUsers = lastusers;
                 PLCManager.XinjiePLC.ModbusWrite(1, 15, 200 + e, new[] { 1 });
@@ -468,6 +472,13 @@ namespace NFCDemo
                             yield.Duration = Math.Round(duration / 3600, 2);
                         }
                     }
+                    //按日期排序
+                    var temp2 = MainWindowViewModel.ProductionRecords.OrderBy(x => x.Date).ToList();
+                    MainWindowViewModel.ProductionRecords.Clear();
+                    foreach (var productionRecord in temp2)
+                    {
+                        MainWindowViewModel.ProductionRecords.Add(productionRecord);
+                    }
                     //DataGrid滚动到最后一行
                     DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
 
@@ -485,10 +496,15 @@ namespace NFCDemo
                     foreach (var productionRecord in tempDuration)
                     {
                         SeriesCollection[0].Values.Add(productionRecord.Duration);
-                        SeriesCollection[1].Values.Add(10.5 * DateTime.Now.Day);
+                        SeriesCollection[1].Values.Add(10.5 * MainWindowViewModel.ProductionRecords.Count(x => x.EmployeeName == productionRecord.EmployeeName));
                     }
-                    Labels = MainWindowViewModel.ProductionRecords.Select(x => x.EmployeeName).ToArray();
+                    Labels.Clear();
+                    foreach (var productionRecord in tempDuration)
+                    {
+                        Labels.Add(productionRecord.EmployeeName);
+                    }
                     Formatter = value => value.ToString("N");
+                    DataContext = this;
                     SetTodayRowColor();
                 }));
             }
@@ -843,15 +859,19 @@ namespace NFCDemo
                 }
             }
         }
-
+  
         private void test_click(object sender, RoutedEventArgs e)
         {
-            LastUser[0] = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == "总经理");
-            PLCManager_PLCStopChanged(null, 0);
+            //LastUser[0] = new User()
+            //{
+            //    //随机名字
+            //    Name = "测试" + new Random().Next(1, 50),
+            //};
+            //PLCManager_PLCStopChanged(null, 0);
         }
 
         public SeriesCollection SeriesCollection { get; set; }
-        public string[] Labels { get; set; }
+        public ObservableCollection<string> Labels { get; set; }=new ObservableCollection<string>();
         public Func<double, string> Formatter { get; set; }
 
         private void DataGrid_OnLoaded(object sender, RoutedEventArgs e)
