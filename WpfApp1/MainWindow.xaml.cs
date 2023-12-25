@@ -517,6 +517,7 @@ namespace NFCDemo
                     Formatter = value => value.ToString("N");
                     DataContext = this;
                     SetTodayRowColor();
+                    MergeData();
                 }));
             }
             catch (Exception e)
@@ -873,12 +874,7 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
-            //LastUser[0] = new User()
-            //{
-            //    //随机名字
-            //    Name = "测试" + new Random().Next(1, 50),
-            //};
-            //PLCManager_PLCStopChanged(null, 0);
+           
         }
 
         public SeriesCollection SeriesCollection { get; set; }
@@ -934,6 +930,49 @@ namespace NFCDemo
             }
             catch (Exception exception)
             {
+            }
+        }
+        object mergaData = new object();
+        /// <summary>
+        /// 保存DataGrid的数据到桌面
+        /// </summary>
+        public void MergeData()
+        {
+            try
+            {
+                lock (mergaData)
+                {
+                    //将DataGrid中的数据合并到一个文件，放到桌面
+                    string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\{DateTime.Now.ToString("yyyy-MM")}.csv";
+                    if (!File.Exists(path))
+                    {
+                        CSVFile.AddNewLine(path, new[] { "日期", "员工", "机台编号", "产量" });
+                    }
+                    else
+                    {
+                        File.Delete(path);
+                        CSVFile.AddNewLine(path, new[] { "日期", "员工", "机台编号", "产量" });
+                    }
+
+                    foreach (var productionRecord in MainWindowViewModel.ProductionRecords)
+                    {
+                        for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+                        {
+                            if (productionRecord.MachineCount[i] != 0)
+                            {
+                                CSVFile.AddNewLine(path, new[]
+                                {
+                                productionRecord.Date.ToString(), productionRecord.EmployeeName,
+                                MainWindowViewModel.MachineDatas[i].Name, productionRecord.MachineCount[i].ToString()
+                            });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                LdrLog(exception.Message);
             }
         }
     }
