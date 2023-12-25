@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:NFCDemo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-    Title="刷卡统计2023.12.23"
+    Title="刷卡统计2023.12.25"
     Width="800"
     Height="450"
     Closed="MainWindow_OnClosed"

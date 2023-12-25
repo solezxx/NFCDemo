@@ -120,20 +120,31 @@ namespace NFCDemo
             }
             catch (Exception e)
             {
-                LdrLog(e.Message);
+                LdrLog("程序初始化报错：" + e.Message);
             }
         }
 
         public void ReadLastUser()
         {
-            //读取Global中保存的LastUsers，初始化LastUser
-            var lastUsers = Global.LastUsers.Split(',');
-            for (int i = 0; i < lastUsers.Length; i++)
+            try
             {
-                if (!string.IsNullOrEmpty(lastUsers[i]))
+                //读取Global中保存的LastUsers，初始化LastUser
+                var lastUsers = Global.LastUsers.Split(',');
+                if (lastUsers.Length < MainWindowViewModel.MachineDatas.Count)
                 {
-                    LastUser[i] = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == lastUsers[i]);
+                    return;
                 }
+                for (int i = 0; i < MainWindowViewModel.MachineDatas.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(lastUsers[i]))
+                    {
+                        LastUser[i] = MainWindowViewModel.AllUser.FirstOrDefault(x => x.Name == lastUsers[i]);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LdrLog("读取上次刷卡人员报错：" + e.Message);
             }
         }
         public void FirstStartReadCsv()
@@ -249,7 +260,7 @@ namespace NFCDemo
             }
             catch (Exception e)
             {
-                LdrLog(e.Message);
+                LdrLog("程序初始化读取文件报错：" + e.Message);
             }
         }
 
@@ -667,7 +678,7 @@ namespace NFCDemo
                                         string lastusers = "";
                                         foreach (var u in LastUser)
                                         {
-                                            lastusers += u == null ? "" : u.Name + ",";
+                                            lastusers += (u == null ? "" : u.Name) + ",";
                                         }
                                         Global.LastUsers = lastusers;
 
@@ -737,7 +748,7 @@ namespace NFCDemo
                         }
                         else
                         {
-                            LdrLog(e.Message);
+                            LdrLog($"读取NFC {MainWindowViewModel.MachineDatas[machineIndex]}报错：" + e.Message);
                         }
                     }
                 }
@@ -859,7 +870,7 @@ namespace NFCDemo
                 }
             }
         }
-  
+
         private void test_click(object sender, RoutedEventArgs e)
         {
             //LastUser[0] = new User()
@@ -871,7 +882,7 @@ namespace NFCDemo
         }
 
         public SeriesCollection SeriesCollection { get; set; }
-        public ObservableCollection<string> Labels { get; set; }=new ObservableCollection<string>();
+        public ObservableCollection<string> Labels { get; set; } = new ObservableCollection<string>();
         public Func<double, string> Formatter { get; set; }
 
         private void DataGrid_OnLoaded(object sender, RoutedEventArgs e)
