@@ -134,7 +134,26 @@ namespace NFCDemo
 
         private void SetSerNum_Click(object sender, RoutedEventArgs e)
         {
-            
+            if (IntPtr.Zero != reader.GetHComm())                             //判断串口是否打开
+            {
+                byte[] buf = new byte[256];
+                byte[] SerNumByte;
+                SerNumByte = CPublic.CharToByte(SetSerNumBox.Text);//可以这样进行赋值？？
+                int deviceAddr = 0x00;    //获得设备地址
+                int ret = reader.SetSerNum(deviceAddr, ref SerNumByte[0], ref buf[0]);
+                if (0 == ret)
+                {
+                    MessageBox.Show("设置成功！");
+                }
+                else
+                {
+                    MessageBox.Show(CPublic.ApiError(ret) + " Return error:" + CPublic.ReturnCodeError(ref buf[0]));
+                }
+            }
+            else
+            {
+               MessageBox.Show("请先打开串口") ;
+            }
         }
     }
 }
