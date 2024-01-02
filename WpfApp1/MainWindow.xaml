@@ -99,18 +99,28 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" d:DataContext="{d:DesignInstance local:MainWindow}">
-                <wpf:CartesianChart LegendLocation="Left" Series="{Binding SeriesCollection}">
-                    <wpf:CartesianChart.AxisX>
-                        <wpf:Axis
-                            FontSize="15"
-                            FontWeight="Bold"
-                            Foreground="Black"
-                            Labels="{Binding Labels}" />
-                    </wpf:CartesianChart.AxisX>
-                    <wpf:CartesianChart.AxisY>
-                        <wpf:Axis Title="产量" LabelFormatter="{Binding Formatter}" />
-                    </wpf:CartesianChart.AxisY>
-                </wpf:CartesianChart>
+                <ScrollViewer HorizontalScrollBarVisibility="Visible">
+                    <wpf:CartesianChart
+                        Width="Auto"
+                        LegendLocation="Top"
+                        Series="{Binding SeriesCollection}">
+                        <wpf:CartesianChart.AxisX>
+                            <wpf:Axis
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Foreground="Black"
+                                Labels="{Binding Labels}"
+                                LabelsRotation="45" >
+                                <wpf:Axis.Separator>
+                                    <wpf:Separator Step="1"/>
+                                </wpf:Axis.Separator>
+                            </wpf:Axis>
+                        </wpf:CartesianChart.AxisX>
+                        <wpf:CartesianChart.AxisY>
+                            <wpf:Axis Title="产量" LabelFormatter="{Binding Formatter}" />
+                        </wpf:CartesianChart.AxisY>
+                    </wpf:CartesianChart>
+                </ScrollViewer>
             </Grid>
             <DataGrid
                 x:Name="DataGrid"

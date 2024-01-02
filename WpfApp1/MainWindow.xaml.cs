@@ -213,9 +213,12 @@ namespace NFCDemo
                 {
                     MainWindowViewModel.ProductionRecords.Add(productionRecord);
                 }
-                //DataGrid滚动到最后一行
-                DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
 
+                if (DataGrid.Items.Count>0)
+                {
+                    //DataGrid滚动到最后一行
+                    DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
+                }
                 //创建柱状图
                 SeriesCollection = new SeriesCollection
                 {
