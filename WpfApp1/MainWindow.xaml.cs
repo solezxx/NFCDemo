@@ -186,7 +186,19 @@ namespace NFCDemo
                                     double duration = 0;
                                     for (int i = 0; i < temp.MachineCount.Length; i++)
                                     {
-                                        duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                        if (machineName.Contains("裁线机"))
+                                        {
+                                            var type = "";
+                                            if (items.Length>5)
+                                            {
+                                                type = items[5];
+                                            }
+                                            duration += temp.MachineCount[i] * (type == "0" ? MainWindowViewModel.MachineDatas[i].CT : MainWindowViewModel.MachineDatas[i].CT1);
+                                        }
+                                        else
+                                        {
+                                            duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                        }
                                     }
                                     temp.Duration = Math.Round(duration / 3600, 2);
                                     MainWindowViewModel.ProductionRecords.Add(temp);
@@ -198,7 +210,17 @@ namespace NFCDemo
                                     double duration = 0;
                                     for (int i = 0; i < yield.MachineCount.Length; i++)
                                     {
-                                        duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                        if (machineName.Contains("裁线机"))
+                                        {
+                                            var type = "";
+                                            if (items.Length > 5)
+                                            {
+                                                type = items[5];
+                                            }
+                                            duration += yield.MachineCount[i] * (type == "0" ? MainWindowViewModel.MachineDatas[i].CT : MainWindowViewModel.MachineDatas[i].CT1);
+                                        }
+                                        else
+                                            duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
                                     }
                                     yield.Duration = Math.Round(duration / 3600, 2);
                                 }
@@ -214,7 +236,7 @@ namespace NFCDemo
                     MainWindowViewModel.ProductionRecords.Add(productionRecord);
                 }
 
-                if (DataGrid.Items.Count>0)
+                if (DataGrid.Items.Count > 0)
                 {
                     //DataGrid滚动到最后一行
                     DataGrid.ScrollIntoView(DataGrid.Items[DataGrid.Items.Count - 1]);
@@ -393,7 +415,14 @@ namespace NFCDemo
                 string path = Global.SavePath + $"{MainWindowViewModel.MachineDatas[e].Name}\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
                 if (!File.Exists(path))
                 {
-                    CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                    if (MainWindowViewModel.MachineDatas[e].Name.Contains("裁线机"))
+                    {
+                        CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量", "种类" });
+                    }
+                    else
+                    {
+                        CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                    }
                 }
                 ////判断文件是否打开
                 //if (IsFileInUse(path))
@@ -412,12 +441,26 @@ namespace NFCDemo
 
                 if (PLCManager.Count[e] != 0)//产量为0不保存也不刷新
                 {
-                    CSVFile.AddNewLine(path,
-                        new[]
-                        {
-                            DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                            LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
-                        });
+                    if (MainWindowViewModel.MachineDatas[e].Name.Contains("裁线机"))
+                    {
+                        int t = Convert.ToInt32(MainWindowViewModel.MachineDatas[e].Name.Replace("裁线机", ""));
+                        var a = PLCManager.XinjiePLC.ModbusRead(1, 1, t == 1 ? 16384 + EightToTen(14) : 16384 + EightToTen(16));
+                        CSVFile.AddNewLine(path,
+                            new[]
+                            {
+                                DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString(),a[0].ToString()
+                            });
+                    }
+                    else
+                    {
+                        CSVFile.AddNewLine(path,
+                            new[]
+                            {
+                                DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                LastUser[e].Name,MainWindowViewModel.MachineDatas[e].Name, PLCManager.Count[e].ToString()
+                            });
+                    }
                     ReadCsvAndRefresh(path);
                 }
                 LdrLog($"{LastUser[e].Name}自动下机");
@@ -468,7 +511,19 @@ namespace NFCDemo
                             double duration = 0;
                             for (int i = 0; i < temp.MachineCount.Length; i++)
                             {
-                                duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                if (machineName.Contains("裁线机"))
+                                {
+                                    var type = "";
+                                    if (items.Length > 5)
+                                    {
+                                        type = items[5];
+                                    }
+                                    duration += temp.MachineCount[i] * (type == "0" ? MainWindowViewModel.MachineDatas[i].CT : MainWindowViewModel.MachineDatas[i].CT1);
+                                }
+                                else
+                                {
+                                    duration += temp.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                }
                             }
                             temp.Duration = Math.Round(duration / 3600, 2);
                             MainWindowViewModel.ProductionRecords.Add(temp);
@@ -481,7 +536,19 @@ namespace NFCDemo
                             double duration = 0;
                             for (int i = 0; i < yield.MachineCount.Length; i++)
                             {
-                                duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                if (machineName.Contains("裁线机"))
+                                {
+                                    var type = "";
+                                    if (items.Length > 5)
+                                    {
+                                        type = items[5];
+                                    }
+                                    duration += yield.MachineCount[i] * (type == "0" ? MainWindowViewModel.MachineDatas[i].CT : MainWindowViewModel.MachineDatas[i].CT1);
+                                }
+                                else
+                                {
+                                    duration += yield.MachineCount[i] * MainWindowViewModel.MachineDatas[i].CT;
+                                }
                             }
                             yield.Duration = Math.Round(duration / 3600, 2);
                         }
@@ -654,7 +721,14 @@ namespace NFCDemo
                                                           $"\\{DateTime.Now.ToString("yyyy-MM-dd")}.csv";
                                             if (!File.Exists(path))
                                             {
-                                                CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                                                if (MainWindowViewModel.MachineDatas[machineIndex].Name.Contains("裁线机"))
+                                                {
+                                                    CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量", "种类" });
+                                                }
+                                                else
+                                                {
+                                                    CSVFile.AddNewLine(path, new[] { "日期", "时间", "员工", "机台编号", "产量" });
+                                                }
                                             }
 
                                             ////判断文件是否打开
@@ -666,13 +740,28 @@ namespace NFCDemo
                                             //}
                                             if (PLCManager.Count[machineIndex] != 0)
                                             {
-                                                CSVFile.AddNewLine(path,
-                                                    new[]
-                                                    {
-                                                        DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
-                                                        LastUser[machineIndex].Name, MainWindowViewModel.MachineDatas[machineIndex].Name,
-                                                        PLCManager.Count[machineIndex].ToString()
-                                                    });
+                                                if (MainWindowViewModel.MachineDatas[machineIndex].Name.Contains("裁线机"))
+                                                {
+                                                    int t = Convert.ToInt32(MainWindowViewModel.MachineDatas[machineIndex].Name.Replace("裁线机", ""));
+                                                    var a = PLCManager.XinjiePLC.ModbusRead(1, 1, t == 1 ? 16384 + EightToTen(14) : 16384 + EightToTen(16));
+                                                    CSVFile.AddNewLine(path,
+                                                        new[]
+                                                        {
+                                                            DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                                            LastUser[machineIndex].Name, MainWindowViewModel.MachineDatas[machineIndex].Name,
+                                                            PLCManager.Count[machineIndex].ToString(),a[0].ToString()
+                                                        });
+                                                }
+                                                else
+                                                {
+                                                    CSVFile.AddNewLine(path,
+                                                        new[]
+                                                        {
+                                                            DateTime.Now.ToLongDateString(), DateTime.Now.ToLongTimeString(),
+                                                            LastUser[machineIndex].Name, MainWindowViewModel.MachineDatas[machineIndex].Name,
+                                                            PLCManager.Count[machineIndex].ToString()
+                                                        });
+                                                }
                                                 ReadCsvAndRefresh(path);
                                             }
                                             LdrLog($"{LastUser[machineIndex].Name}下机，{user.Name}上机");
@@ -757,6 +846,14 @@ namespace NFCDemo
                     }
                 }
             }), MainWindowViewModel.cts.Token);
+        }
+
+        private static int EightToTen(int octalNumber)
+        {
+            // 使用 Convert.ToInt32() 将八进制数转换为十进制数
+            int decimalNumber = Convert.ToInt32(octalNumber.ToString(), 8);
+
+            return decimalNumber;
         }
         static bool IsFileInUse(string filePath)
         {
@@ -877,7 +974,7 @@ namespace NFCDemo
 
         private void test_click(object sender, RoutedEventArgs e)
         {
-           
+
         }
 
         public SeriesCollection SeriesCollection { get; set; }

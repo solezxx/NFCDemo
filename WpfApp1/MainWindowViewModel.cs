@@ -97,6 +97,10 @@ namespace NFCDemo
         /// </summary>
         public double CT { get; set; }
         /// <summary>
+        /// 单pcs耗时情况2
+        /// </summary>
+        public double CT1 { get; set; }
+        /// <summary>
         /// 是否启用
         /// </summary>
         public bool Open { get; set; }

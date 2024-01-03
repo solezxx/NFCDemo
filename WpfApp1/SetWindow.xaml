@@ -51,6 +51,10 @@
                             Binding="{Binding CT}"
                             Header="CT[秒]" />
                         <DataGridTextColumn
+                            Width="Auto"
+                            Binding="{Binding CT1}"
+                            Header="CT2-针对裁线机多芯[秒]" />
+                        <DataGridTextColumn
                             Width="100"
                             Binding="{Binding MT}"
                             Header="超时下机[秒]" />

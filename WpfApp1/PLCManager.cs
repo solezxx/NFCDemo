@@ -18,7 +18,13 @@ namespace NFCDemo
             XinjiePLC.StartConnect();
             StartReadPLC();
         }
+        private static int EightToTen(int octalNumber)
+        {
+            // 使用 Convert.ToInt32() 将八进制数转换为十进制数
+            int decimalNumber = Convert.ToInt32(octalNumber.ToString(), 8);
 
+            return decimalNumber;
+        }
         static bool mStartReadPLCStatus = false;
         public static async void StartReadPLC()
         {
